@@ -1,0 +1,75 @@
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+    
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.id) {
+      config.headers['User-ID'] = user.id;
+    }
+  }
+  return config;
+});
+
+export const authAPI = {
+  login: (email, password) => api.post('/auth/login', { email, password }),
+  register: (userData) => api.post('/auth/register', userData),
+};
+
+export const workspaceAPI = {
+  getAll: () => api.get('/workspaces'),
+  getById: (workspaceId) => api.get(`/workspaces/${workspaceId}`),
+  create: (workspaceData) => api.post('/workspaces', workspaceData),
+  inviteUser: (workspaceId, email, role) => 
+    api.post(`/workspaces/${workspaceId}/invite`, { email, role }),
+  removeMember: (workspaceId, userId) => 
+    api.delete(`/workspaces/${workspaceId}/members/${userId}`),
+  updateMemberRole: (workspaceId, userId, role) => 
+    api.patch(`/workspaces/${workspaceId}/members/${userId}/role`, { role }),
+};
+
+export const userAPI = {
+  search: (email) => api.get(`/users/search?email=${email}`),
+  getProfile: () => api.get('/users/profile'),
+};
+
+export const chatAPI = {
+  getMessages: (workspaceId, limit = 50, offset = 0) => 
+    api.get(`/chat/workspace/${workspaceId}/messages?limit=${limit}&offset=${offset}`),
+  getUnreadCount: (workspaceId) => 
+    api.get(`/chat/workspace/${workspaceId}/unread-count`),
+  markMessagesRead: (messageIds, workspaceId) =>
+    api.post('/chat/messages/mark-read', { messageIds, workspaceId }),
+};
+
+// Add task API endpoints
+export const taskAPI = {
+  getTaskBoard: (workspaceId) => api.get(`/tasks/workspace/${workspaceId}`),
+  
+  // Lists
+  createList: (listData) => api.post('/tasks/lists', listData),
+  updateList: (listId, updates) => api.put(`/tasks/lists/${listId}`, updates),
+  deleteList: (listId) => api.delete(`/tasks/lists/${listId}`),
+  reorderLists: (workspaceId, listOrders) => api.post('/tasks/lists/reorder', { workspaceId, listOrders }),
+  
+  // Tasks
+  createTask: (taskData) => api.post('/tasks/tasks', taskData),
+  updateTask: (taskId, updates) => api.put(`/tasks/tasks/${taskId}`, updates),
+  deleteTask: (taskId) => api.delete(`/tasks/tasks/${taskId}`),
+  moveTask: (taskId, newListId, newPosition) => api.post(`/tasks/tasks/${taskId}/move`, { newListId, newPosition }),
+  reorderTasks: (listId, taskOrders) => api.post('/tasks/tasks/reorder', { listId, taskOrders }),
+};
+
+export default api;

@@ -1,0 +1,21 @@
+{
+  "name": "remote-collab-suite",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:server": "npm run dev --prefix Backend",
+    "dev:client": "npm run dev --prefix Frontend",
+    "dev": "concurrently \"npm run dev:client\"  \"npm run dev:server\""
+  },
+  "dependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
