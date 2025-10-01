@@ -15,6 +15,9 @@ const TaskList = ({
 }) => {
   const [showCreateTask, setShowCreateTask] = React.useState(false);
 
+  // Ensure list.tasks is always an array
+  const tasks = Array.isArray(list?.tasks) ? list.tasks : [];
+
   const handleSubmit = (name) => {
     onUpdate(list.id, name);
   };
@@ -35,6 +38,16 @@ const TaskList = ({
   const handleCancelCreateTask = () => {
     setShowCreateTask(false);
   };
+
+  if (!list) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-4 h-fit">
+        <div className="text-center text-gray-500 py-8">
+          <p>List not available</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 rounded-lg p-4 h-fit max-h-full overflow-hidden flex flex-col">
@@ -66,7 +79,7 @@ const TaskList = ({
             >
               <h3 className="font-medium text-gray-900 text-sm">{list.name}</h3>
               <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">
-                {list.tasks.length}
+                {tasks.length}
               </span>
             </div>
             <div className="flex space-x-1">
@@ -104,7 +117,7 @@ const TaskList = ({
             }`}
             style={{ maxHeight: 'calc(100vh - 300px)' }}
           >
-            {list.tasks.map((task, index) => (
+            {tasks.map((task, index) => (
               <Draggable key={task.id} draggableId={task.id} index={index}>
                 {(provided, snapshot) => (
                   <div
@@ -123,7 +136,7 @@ const TaskList = ({
             {provided.placeholder}
 
             {/* Empty state */}
-            {list.tasks.length === 0 && !showCreateTask && (
+            {tasks.length === 0 && !showCreateTask && (
               <div className="text-center py-8 text-gray-400">
                 <svg className="mx-auto h-8 w-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v11a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />

@@ -21,11 +21,20 @@ const authenticateUser = (req, res, next) => {
 router.use(authenticateUser);
 
 // Get all lists and tasks for a workspace
+// Get all lists and tasks for a workspace
 router.get('/workspace/:workspaceId', async (req, res) => {
   try {
     const { workspaceId } = req.params;
+    console.log('=== FETCHING TASK BOARD ===');
+    console.log('Workspace ID:', workspaceId);
+    console.log('User ID:', req.userId);
+
+    if (!workspaceId) {
+      return res.status(400).json({ error: 'Workspace ID is required' });
+    }
 
     // Verify user has access to workspace
+    console.log('🔍 Checking workspace access...');
     const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('id')
@@ -33,18 +42,42 @@ router.get('/workspace/:workspaceId', async (req, res) => {
       .eq('user_id', req.userId)
       .single();
 
-    if (membershipError || !membership) {
+    if (membershipError) {
+      console.error('❌ Membership check error:', membershipError);
+      if (membershipError.code === 'PGRST116') { // No rows returned
+        return res.status(403).json({ error: 'Access denied to workspace' });
+      }
+      throw membershipError;
+    }
+
+    if (!membership) {
+      console.log('❌ User not a member of workspace');
       return res.status(403).json({ error: 'Access denied to workspace' });
     }
 
+    console.log('✅ User has workspace access');
+
+    // Get lists with tasks
+    console.log('📋 Fetching lists and tasks...');
     const lists = await TaskBoardModel.getLists(workspaceId);
+    console.log('✅ Lists fetched successfully:', lists.length);
+    
     res.json({ lists });
   } catch (error) {
-    console.error('Error fetching task board:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('❌ ERROR FETCHING TASK BOARD:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details
+    });
+    
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message,
+      code: error.code
+    });
   }
 });
-
 // Create a new list
 router.post('/lists', async (req, res) => {
   try {

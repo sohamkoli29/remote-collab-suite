@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useTaskBoard } from '../../hooks/useTaskBoard';
 import TaskList from './TaskList';
-import TaskCard from './TaskCard';
 import CreateListForm from './CreateListForm';
 import CreateTaskModal from './CreateTaskModal';
+import DebugTaskCreate from './DebugTaskCreate';
 
 const TaskBoard = ({ workspaceId }) => {
   const { 
-    lists, 
+    lists = [], 
     loading, 
     error, 
     createList, 
@@ -25,6 +25,8 @@ const TaskBoard = ({ workspaceId }) => {
   const [showCreateList, setShowCreateList] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(null); // listId for which to create task
   const [editingList, setEditingList] = useState(null);
+
+  const safeLists = Array.isArray(lists) ? lists : [];
 
   const onDragEnd = async (result) => {
     const { destination, source, draggableId, type } = result;
@@ -192,6 +194,9 @@ const TaskBoard = ({ workspaceId }) => {
         </button>
       </div>
 
+      {/* Debug Component - Temporary */}
+      <DebugTaskCreate lists={safeLists} />
+
       {/* Task Board */}
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="task-board" type="list" direction="horizontal">
@@ -201,7 +206,7 @@ const TaskBoard = ({ workspaceId }) => {
               ref={provided.innerRef}
               className="flex space-x-4 overflow-x-auto pb-4 min-h-96"
             >
-              {lists.map((list, index) => (
+              {safeLists.map((list, index) => (
                 <Draggable key={list.id} draggableId={list.id} index={index}>
                   {(provided) => (
                     <div
@@ -243,7 +248,7 @@ const TaskBoard = ({ workspaceId }) => {
       {showCreateTask && (
         <CreateTaskModal
           listId={showCreateTask}
-          lists={lists}
+          lists={safeLists}
           onClose={() => setShowCreateTask(null)}
           onCreate={createTask}
         />

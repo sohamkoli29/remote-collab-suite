@@ -10,7 +10,11 @@ export const useTaskBoard = (workspaceId) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!workspaceId || !currentUser?.id) return;
+    if (!workspaceId || !currentUser?.id) {
+      setError('Workspace ID and user ID are required');
+      setLoading(false);
+      return;
+    }
 
     let isMounted = true;
 
@@ -22,13 +26,19 @@ export const useTaskBoard = (workspaceId) => {
         // Load initial task board data
         await loadTaskBoard();
 
-        // Join task board room
-        await socketService.joinTaskBoard(workspaceId, currentUser.id);
+        // Join task board room (with error handling)
+        try {
+          await socketService.joinTaskBoard(workspaceId, currentUser.id);
+          console.log('Successfully joined task board room');
+        } catch (socketError) {
+          console.warn('Failed to join task board room, but continuing:', socketError);
+          // Continue even if socket connection fails
+        }
 
       } catch (error) {
         console.error('Error initializing task board:', error);
         if (isMounted) {
-          setError('Failed to load task board');
+          setError(error.message || 'Failed to load task board');
         }
       } finally {
         if (isMounted) {
@@ -45,7 +55,7 @@ export const useTaskBoard = (workspaceId) => {
         setLists(prevLists => 
           prevLists.map(list => 
             list.id === task.list_id 
-              ? { ...list, tasks: [...list.tasks, task] }
+              ? { ...list, tasks: [...(list.tasks || []), task] }
               : list
           )
         );
@@ -57,7 +67,7 @@ export const useTaskBoard = (workspaceId) => {
         setLists(prevLists =>
           prevLists.map(list => ({
             ...list,
-            tasks: list.tasks.map(task =>
+            tasks: (list.tasks || []).map(task =>
               task.id === updatedTask.id ? updatedTask : task
             )
           }))
@@ -70,7 +80,7 @@ export const useTaskBoard = (workspaceId) => {
         setLists(prevLists =>
           prevLists.map(list => ({
             ...list,
-            tasks: list.tasks.filter(task => task.id !== taskId)
+            tasks: (list.tasks || []).filter(task => task.id !== taskId)
           }))
         );
       }
@@ -82,14 +92,14 @@ export const useTaskBoard = (workspaceId) => {
           // Remove task from source list
           const updatedLists = prevLists.map(list =>
             list.id === sourceListId
-              ? { ...list, tasks: list.tasks.filter(t => t.id !== task.id) }
+              ? { ...list, tasks: (list.tasks || []).filter(t => t.id !== task.id) }
               : list
           );
 
           // Add task to destination list
           return updatedLists.map(list =>
             list.id === destinationListId
-              ? { ...list, tasks: [...list.tasks, task] }
+              ? { ...list, tasks: [...(list.tasks || []), task] }
               : list
           );
         });
@@ -118,26 +128,37 @@ export const useTaskBoard = (workspaceId) => {
       }
     };
 
-    // Subscribe to socket events
-    socketService.on('task-created', handleTaskCreated);
-    socketService.on('task-updated', handleTaskUpdated);
-    socketService.on('task-deleted', handleTaskDeleted);
-    socketService.on('task-moved', handleTaskMoved);
-    socketService.on('list-created', handleListCreated);
-    socketService.on('list-updated', handleListUpdated);
-    socketService.on('list-deleted', handleListDeleted);
+    // Subscribe to events (only if socket is connected)
+    if (socketService.isConnected) {
+      socketService.on('task-created', handleTaskCreated);
+      socketService.on('task-updated', handleTaskUpdated);
+      socketService.on('task-deleted', handleTaskDeleted);
+      socketService.on('task-moved', handleTaskMoved);
+      socketService.on('list-created', handleListCreated);
+      socketService.on('list-updated', handleListUpdated);
+      socketService.on('list-deleted', handleListDeleted);
+    }
 
     // Cleanup
     return () => {
       isMounted = false;
-      socketService.off('task-created', handleTaskCreated);
-      socketService.off('task-updated', handleTaskUpdated);
-      socketService.off('task-deleted', handleTaskDeleted);
-      socketService.off('task-moved', handleTaskMoved);
-      socketService.off('list-created', handleListCreated);
-      socketService.off('list-updated', handleListUpdated);
-      socketService.off('list-deleted', handleListDeleted);
-      socketService.leaveTaskBoard(workspaceId, currentUser.id);
+      
+      // Only unsubscribe if we subscribed
+      if (socketService.isConnected) {
+        socketService.off('task-created', handleTaskCreated);
+        socketService.off('task-updated', handleTaskUpdated);
+        socketService.off('task-deleted', handleTaskDeleted);
+        socketService.off('task-moved', handleTaskMoved);
+        socketService.off('list-created', handleListCreated);
+        socketService.off('list-updated', handleListUpdated);
+        socketService.off('list-deleted', handleListDeleted);
+      }
+      
+      try {
+        socketService.leaveTaskBoard(workspaceId, currentUser.id);
+      } catch (error) {
+        console.warn('Error leaving task board:', error);
+      }
     };
   }, [workspaceId, currentUser]);
 
@@ -147,7 +168,8 @@ export const useTaskBoard = (workspaceId) => {
       setLists(response.data.lists || []);
     } catch (error) {
       console.error('Error loading task board:', error);
-      throw error;
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to load task board';
+      throw new Error(errorMessage);
     }
   };
 
@@ -157,7 +179,9 @@ export const useTaskBoard = (workspaceId) => {
       const newList = response.data.list;
       
       // Emit socket event for real-time update
-      socketService.emitListCreated(workspaceId, newList);
+      if (socketService.isConnected) {
+        socketService.emitListCreated(workspaceId, newList);
+      }
       
       return newList;
     } catch (error) {
@@ -172,7 +196,9 @@ export const useTaskBoard = (workspaceId) => {
       const updatedList = response.data.list;
       
       // Emit socket event for real-time update
-      socketService.emitListUpdated(workspaceId, updatedList);
+      if (socketService.isConnected) {
+        socketService.emitListUpdated(workspaceId, updatedList);
+      }
       
       return updatedList;
     } catch (error) {
@@ -186,7 +212,9 @@ export const useTaskBoard = (workspaceId) => {
       await taskAPI.deleteList(listId);
       
       // Emit socket event for real-time update
-      socketService.emitListDeleted(workspaceId, listId);
+      if (socketService.isConnected) {
+        socketService.emitListDeleted(workspaceId, listId);
+      }
     } catch (error) {
       console.error('Error deleting list:', error);
       throw error;
@@ -194,27 +222,79 @@ export const useTaskBoard = (workspaceId) => {
   };
 
   const createTask = async (listId, taskData) => {
-    try {
-      const response = await taskAPI.createTask({ listId, ...taskData });
-      const newTask = response.data.task;
-      
-      // Emit socket event for real-time update
+  try {
+    console.log('🔄 createTask called with:', { listId, taskData });
+    
+    // Debug: Check if parameters are correct
+    if (typeof listId === 'object') {
+      console.warn('⚠️ listId is an object, might be parameter mismatch');
+      console.log('listId value:', listId);
+    }
+    
+    // Prepare the request data correctly
+    const requestData = { 
+      listId: typeof listId === 'string' ? listId : listId?.listId,
+      title: taskData?.title || listId?.title,
+      description: taskData?.description || listId?.description,
+      assigneeId: taskData?.assigneeId || listId?.assigneeId,
+      dueDate: taskData?.dueDate || listId?.dueDate,
+      priority: taskData?.priority || listId?.priority || 'medium'
+    };
+    
+    // Validate required fields
+    if (!requestData.listId) {
+      throw new Error('List ID is required');
+    }
+    if (!requestData.title) {
+      throw new Error('Title is required');
+    }
+    
+    console.log('📤 Sending to API:', JSON.stringify(requestData, null, 2));
+    
+    const response = await taskAPI.createTask(requestData);
+    const newTask = response.data.task;
+    
+    console.log('✅ Task created successfully:', newTask);
+    
+    // Emit socket event for real-time update
+    if (socketService.isConnected) {
       socketService.emitTaskCreated(workspaceId, newTask);
+    }
+    
+    return newTask;
+  } catch (error) {
+    console.error('❌ Error creating task:', error);
+    
+    if (error.response) {
+      console.error('📡 Server Response:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
       
-      return newTask;
-    } catch (error) {
-      console.error('Error creating task:', error);
+      const serverError = error.response.data;
+      const errorMessage = serverError.error || `Server error: ${error.response.status}`;
+      const errorDetails = serverError.details ? ` - ${serverError.details}` : '';
+      
+      throw new Error(`${errorMessage}${errorDetails}`);
+    } else if (error.request) {
+      console.error('🚫 No response received from server');
+      throw new Error('No response from server. Please check your connection.');
+    } else {
+      console.error('💥 Request setup error:', error.message);
       throw error;
     }
-  };
-
+  }
+};
   const updateTask = async (taskId, updates) => {
     try {
       const response = await taskAPI.updateTask(taskId, updates);
       const updatedTask = response.data.task;
       
       // Emit socket event for real-time update
-      socketService.emitTaskUpdated(workspaceId, updatedTask);
+      if (socketService.isConnected) {
+        socketService.emitTaskUpdated(workspaceId, updatedTask);
+      }
       
       return updatedTask;
     } catch (error) {
@@ -228,7 +308,9 @@ export const useTaskBoard = (workspaceId) => {
       await taskAPI.deleteTask(taskId);
       
       // Emit socket event for real-time update
-      socketService.emitTaskDeleted(workspaceId, taskId);
+      if (socketService.isConnected) {
+        socketService.emitTaskDeleted(workspaceId, taskId);
+      }
     } catch (error) {
       console.error('Error deleting task:', error);
       throw error;
@@ -238,12 +320,7 @@ export const useTaskBoard = (workspaceId) => {
   const moveTask = async (taskId, newListId, newPosition) => {
     try {
       const response = await taskAPI.moveTask(taskId, newListId, newPosition);
-      const movedTask = response.data.task;
-      
-      // Emit socket event for real-time update
-      // Note: We need to track source list ID - this will be handled in the drag-and-drop component
-      
-      return movedTask;
+      return response.data.task;
     } catch (error) {
       console.error('Error moving task:', error);
       throw error;

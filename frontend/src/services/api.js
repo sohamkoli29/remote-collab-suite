@@ -23,6 +23,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Make sure these exports exist
 export const authAPI = {
   login: (email, password) => api.post('/auth/login', { email, password }),
   register: (userData) => api.post('/auth/register', userData),
@@ -54,7 +55,6 @@ export const chatAPI = {
     api.post('/chat/messages/mark-read', { messageIds, workspaceId }),
 };
 
-// Add task API endpoints
 export const taskAPI = {
   getTaskBoard: (workspaceId) => api.get(`/tasks/workspace/${workspaceId}`),
   
@@ -65,7 +65,22 @@ export const taskAPI = {
   reorderLists: (workspaceId, listOrders) => api.post('/tasks/lists/reorder', { workspaceId, listOrders }),
   
   // Tasks
-  createTask: (taskData) => api.post('/tasks/tasks', taskData),
+  createTask: (taskData) => {
+    console.log('🚀 taskAPI.createTask called with:', taskData);
+    return api.post('/tasks/tasks', taskData)
+      .then(response => {
+        console.log('✅ taskAPI.createTask success:', response.data);
+        return response;
+      })
+      .catch(error => {
+        console.error('❌ taskAPI.createTask error:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message
+        });
+        throw error;
+      });
+  },
   updateTask: (taskId, updates) => api.put(`/tasks/tasks/${taskId}`, updates),
   deleteTask: (taskId) => api.delete(`/tasks/tasks/${taskId}`),
   moveTask: (taskId, newListId, newPosition) => api.post(`/tasks/tasks/${taskId}/move`, { newListId, newPosition }),

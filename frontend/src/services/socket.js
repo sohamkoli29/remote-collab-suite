@@ -15,7 +15,6 @@ class SocketService {
     }
 
     if (this.isConnecting) {
-      // Wait for connection to be established
       return new Promise((resolve) => {
         const checkConnection = () => {
           if (this.isConnected) {
@@ -64,11 +63,6 @@ class SocketService {
         reject(error);
       });
 
-      this.socket.on('error', (error) => {
-        console.error('Socket error:', error);
-        this.emit('socket-error', error);
-      });
-
       // Set timeout for connection
       setTimeout(() => {
         if (!this.isConnected && this.isConnecting) {
@@ -79,28 +73,27 @@ class SocketService {
     });
   }
 
-  // Join a workspace chat room with connection handling
-  async joinWorkspaceChat(workspaceId, userId) {
-    const executeJoin = () => {
-      if (this.socket && this.isConnected) {
-        this.socket.emit('join-workspace-chat', { workspaceId, userId });
-        console.log(`🎯 Joining workspace chat: ${workspaceId}`);
-      } else {
-        console.warn('Socket not ready, queuing join action');
-        this.queuedActions.push(() => this.joinWorkspaceChat(workspaceId, userId));
-        
-        // Try to reconnect if not already connecting
-        if (!this.isConnecting) {
-          this.connect().catch(console.error);
-        }
-      }
-    };
-
-    if (!this.socket) {
-      await this.connect().catch(console.error);
+  // ADD THIS MISSING METHOD
+  async ensureConnection() {
+    if (!this.socket || !this.isConnected) {
+      await this.connect();
     }
+  }
+
+  // Join a workspace chat room
+  async joinWorkspaceChat(workspaceId, userId) {
+    await this.ensureConnection();
     
-    executeJoin();
+    this.socket.emit('join-workspace-chat', { workspaceId, userId });
+    console.log(`🎯 Joining workspace chat: ${workspaceId}`);
+  }
+
+  // Join task board room
+  async joinTaskBoard(workspaceId, userId) {
+    await this.ensureConnection();
+    
+    this.socket.emit('join-task-board', { workspaceId, userId });
+    console.log(`📋 Joining task board: ${workspaceId}`);
   }
 
   // Leave a workspace chat room
@@ -113,93 +106,62 @@ class SocketService {
     console.log(`👋 Leaving workspace chat: ${workspaceId}`);
   }
 
-  // Send a message with connection handling
+  // Leave task board room
+  leaveTaskBoard(workspaceId, userId) {
+    if (!this.socket || !this.isConnected) return;
+    
+    this.socket.emit('leave-task-board', { workspaceId, userId });
+  }
+
+  // Send a message
   async sendMessage(workspaceId, userId, content, messageType = 'text') {
     if (!content.trim()) {
       throw new Error('Message content is required');
     }
 
-    if (!this.socket || !this.isConnected) {
-      await this.connect().catch(error => {
-        throw new Error('Failed to connect to server');
-      });
-    }
-
-    return new Promise((resolve, reject) => {
-      if (!this.socket || !this.isConnected) {
-        reject(new Error('Socket not connected'));
-        return;
-      }
-
-      this.socket.emit('send-message', { workspaceId, userId, content, messageType }, (response) => {
-        if (response && response.error) {
-          reject(new Error(response.error));
-        } else {
-          resolve(response);
-        }
-      });
-
-      // Timeout for message sending
-      setTimeout(() => {
-        reject(new Error('Message sending timeout'));
-      }, 5000);
-    });
+    await this.ensureConnection();
+    
+    this.socket.emit('send-message', { workspaceId, userId, content, messageType });
+    console.log(`📨 Message sent to workspace: ${workspaceId}`);
   }
 
+  // Task events
+  emitTaskCreated(workspaceId, task) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('task-created', { workspaceId, task });
+  }
 
-  // Add task-related socket methods to SocketService class
+  emitTaskUpdated(workspaceId, task) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('task-updated', { workspaceId, task });
+  }
 
-// Join task board room
-async joinTaskBoard(workspaceId, userId) {
-  await this.ensureConnection();
-  
-  this.socket.emit('join-task-board', { workspaceId, userId });
-  console.log(`📋 Joining task board: ${workspaceId}`);
-}
+  emitTaskDeleted(workspaceId, taskId) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('task-deleted', { workspaceId, taskId });
+  }
 
-// Leave task board room
-leaveTaskBoard(workspaceId, userId) {
-  if (!this.socket || !this.isConnected) return;
-  
-  this.socket.emit('leave-task-board', { workspaceId, userId });
-}
+  emitTaskMoved(workspaceId, task, sourceListId, destinationListId) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('task-moved', { workspaceId, task, sourceListId, destinationListId });
+  }
 
-// Task events
-emitTaskCreated(workspaceId, task) {
-  if (!this.socket || !this.isConnected) return;
-  this.socket.emit('task-created', { workspaceId, task });
-}
+  // List events
+  emitListCreated(workspaceId, list) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('list-created', { workspaceId, list });
+  }
 
-emitTaskUpdated(workspaceId, task) {
-  if (!this.socket || !this.isConnected) return;
-  this.socket.emit('task-updated', { workspaceId, task });
-}
+  emitListUpdated(workspaceId, list) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('list-updated', { workspaceId, list });
+  }
 
-emitTaskDeleted(workspaceId, taskId) {
-  if (!this.socket || !this.isConnected) return;
-  this.socket.emit('task-deleted', { workspaceId, taskId });
-}
+  emitListDeleted(workspaceId, listId) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('list-deleted', { workspaceId, listId });
+  }
 
-emitTaskMoved(workspaceId, task, sourceListId, destinationListId) {
-  if (!this.socket || !this.isConnected) return;
-  this.socket.emit('task-moved', { workspaceId, task, sourceListId, destinationListId });
-}
-
-// List events
-emitListCreated(workspaceId, list) {
-  if (!this.socket || !this.isConnected) return;
-  this.socket.emit('list-created', { workspaceId, list });
-}
-
-emitListUpdated(workspaceId, list) {
-  if (!this.socket || !this.isConnected) return;
-  this.socket.emit('list-updated', { workspaceId, list });
-}
-
-emitListDeleted(workspaceId, listId) {
-  if (!this.socket || !this.isConnected) return;
-  this.socket.emit('list-deleted', { workspaceId, listId });
-}
   // Typing indicators
   startTyping(workspaceId, userId) {
     if (!this.socket || !this.isConnected) return;
@@ -271,8 +233,6 @@ emitListDeleted(workspaceId, listId) {
       socketId: this.socket?.id
     };
   }
-
-
 }
 
 export const socketService = new SocketService();

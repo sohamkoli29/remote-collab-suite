@@ -1,10 +1,23 @@
 import React from 'react';
 import CreateTaskForm from './CreateTaskForm';
 
-const CreateTaskModal = ({ listId, lists, onClose, onCreate }) => {
-  const handleCreate = async (taskData) => {
-    await onCreate(taskData);
-    onClose();
+const CreateTaskModal = ({ listId, lists , onClose, onCreate }) => {
+    const handleCreate = async (taskData) => {
+    console.log('🎯 CreateTaskModal: Creating task with:', { listId, taskData });
+    
+    // Make sure listId is passed correctly
+    if (!listId) {
+      console.error('❌ No listId provided to CreateTaskModal');
+      return;
+    }
+    
+    try {
+      await onCreate(listId, taskData);
+      onClose();
+    } catch (error) {
+      console.error('❌ Error in CreateTaskModal:', error);
+      // Error is handled by CreateTaskForm
+    }
   };
 
   return (
