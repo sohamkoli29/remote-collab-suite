@@ -50,7 +50,7 @@ const CreateTaskForm = ({ listId, lists = [], workspaceId, onSubmit, onCancel, c
       }
     };
 
-    fetc  hMembers();
+    fetchMembers();
   }, [workspaceId]);
 
   const handleSubmit = async (e) => {
