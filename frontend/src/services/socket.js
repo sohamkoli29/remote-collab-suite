@@ -89,12 +89,23 @@ class SocketService {
   }
 
   // Join task board room
-  async joinTaskBoard(workspaceId, userId) {
+ async joinTaskBoard(workspaceId, userId) {
+  try {
     await this.ensureConnection();
     
-    this.socket.emit('join-task-board', { workspaceId, userId });
-    console.log(`📋 Joining task board: ${workspaceId}`);
+    if (this.socket && this.isConnected) {
+      this.socket.emit('join-task-board', { workspaceId, userId });
+      console.log(`✅ Joined task board: ${workspaceId}`);
+    } else {
+      console.warn('⚠️ Socket not connected, cannot join task board');
+      // Queue the join action for when connection is restored
+      this.queuedActions.push(() => this.joinTaskBoard(workspaceId, userId));
+    }
+  } catch (error) {
+    console.error('❌ Error joining task board:', error);
+    throw error;
   }
+}
 
   // Leave a workspace chat room
   leaveWorkspaceChat(workspaceId, userId) {
@@ -126,10 +137,17 @@ class SocketService {
   }
 
   // Task events
-  emitTaskCreated(workspaceId, task) {
-    if (!this.socket || !this.isConnected) return;
-    this.socket.emit('task-created', { workspaceId, task });
+emitTaskCreated(workspaceId, task) {
+  if (!this.socket || !this.isConnected) {
+    console.warn('⚠️ Socket not connected, cannot emit task-created');
+    // You might want to queue this or use a fallback
+    return;
   }
+  
+  console.log('📤 Emitting task-created for workspace:', workspaceId);
+  this.socket.emit('task-created', { workspaceId, task });
+}
+
 
   emitTaskUpdated(workspaceId, task) {
     if (!this.socket || !this.isConnected) return;
@@ -147,10 +165,15 @@ class SocketService {
   }
 
   // List events
-  emitListCreated(workspaceId, list) {
-    if (!this.socket || !this.isConnected) return;
-    this.socket.emit('list-created', { workspaceId, list });
+emitListCreated(workspaceId, list) {
+  if (!this.socket || !this.isConnected) {
+    console.warn('⚠️ Socket not connected, cannot emit list-created');
+    return;
   }
+  
+  console.log('📤 Emitting list-created for workspace:', workspaceId);
+  this.socket.emit('list-created', { workspaceId, list });
+}
 
   emitListUpdated(workspaceId, list) {
     if (!this.socket || !this.isConnected) return;

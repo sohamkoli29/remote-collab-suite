@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { workspaceAPI } from '../../services/api';
 
-const CreateTaskForm = ({ listId, lists = [], onSubmit, onCancel, compact = false }) => {
+const CreateTaskForm = ({ listId, lists = [], workspaceId, onSubmit, onCancel, compact = false }) => {
   const { user: currentUser } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -11,22 +12,46 @@ const CreateTaskForm = ({ listId, lists = [], onSubmit, onCancel, compact = fals
   const [selectedListId, setSelectedListId] = useState(listId);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [members, setMembers] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
 
-  // Safely get all members from all lists
-  const allMembers = React.useMemo(() => {
-    if (!Array.isArray(lists)) return [];
-    
-    return lists.flatMap(list => 
-      (Array.isArray(list.tasks) ? list.tasks : [])
-        .flatMap(task => [task.assignee, task.creator])
-        .filter(Boolean)
-    );
-  }, [lists]);
+  // Fetch workspace members
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!workspaceId) {
+        setLoadingMembers(false);
+        return;
+      }
 
-  // Get unique members
-  const uniqueMembers = React.useMemo(() => {
-    return [...new Map(allMembers.map(member => [member.id, member])).values()];
-  }, [allMembers]);
+      try {
+        setLoadingMembers(true);
+        const response = await workspaceAPI.getById(workspaceId);
+        
+        // DEBUG: Log the entire response to see the structure
+        console.log('🔍 Full API Response:', response);
+        console.log('🔍 Response.data:', response.data);
+        
+        // Try multiple possible paths where members might be
+        const workspaceMembers = response.data.workspace?.members || 
+                                 response.data.members || 
+                                 response.data.workspace?.users ||
+                                 response.data.users ||
+                                 [];
+        
+        console.log('✅ Extracted workspace members:', workspaceMembers);
+        console.log('📊 Members count:', workspaceMembers.length);
+        
+        setMembers(workspaceMembers);
+      } catch (error) {
+        console.error('❌ Error fetching workspace members:', error);
+        setMembers([]);
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+
+    fetc  hMembers();
+  }, [workspaceId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,11 +61,10 @@ const CreateTaskForm = ({ listId, lists = [], onSubmit, onCancel, compact = fals
     setError('');
 
     try {
-      // Prepare task data with proper formatting
       const taskData = {
         listId: selectedListId,
         title: title.trim(),
-        description: description.trim() || null, // Use null instead of empty string
+        description: description.trim() || null,
         assigneeId: assigneeId || null,
         dueDate: dueDate || null,
         priority: priority || 'medium'
@@ -147,14 +171,31 @@ const CreateTaskForm = ({ listId, lists = [], onSubmit, onCancel, compact = fals
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
               className="input-field"
+              disabled={loadingMembers}
             >
-              <option value="">Unassigned</option>
-              {uniqueMembers.map(member => (
-                <option key={member.id} value={member.id}>
-                  {member.first_name} {member.last_name}
-                </option>
-              ))}
+              <option value="">
+                {loadingMembers ? 'Loading members...' : 'Unassigned'}
+              </option>
+              {members.map(member => {
+                // Handle different possible member data structures
+                const memberId = member.id || member.user_id;
+                const memberName = member.name || 
+                                  `${member.first_name || ''} ${member.last_name || ''}`.trim() ||
+                                  member.email ||
+                                  'Unknown User';
+                
+                return (
+                  <option key={memberId} value={memberId}>
+                    {memberName}
+                  </option>
+                );
+              })}
             </select>
+            {members.length === 0 && !loadingMembers && (
+              <p className="text-xs text-gray-500 mt-1">
+                No members in this workspace yet
+              </p>
+            )}
           </div>
 
           <div>

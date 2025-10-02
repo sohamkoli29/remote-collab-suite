@@ -39,6 +39,9 @@ export const workspaceAPI = {
     api.delete(`/workspaces/${workspaceId}/members/${userId}`),
   updateMemberRole: (workspaceId, userId, role) => 
     api.patch(`/workspaces/${workspaceId}/members/${userId}/role`, { role }),
+ 
+  getMembers: (workspaceId) => 
+    api.get(`/workspaces/${workspaceId}/members`),
 };
 
 export const userAPI = {
@@ -82,7 +85,7 @@ export const taskAPI = {
       });
   },
   updateTask: (taskId, updates) => api.put(`/tasks/tasks/${taskId}`, updates),
-  deleteTask: (taskId) => api.delete(`/tasks/tasks/${taskId}`),
+  deleteTask: (taskId) => api.delete(`/tasks/tasks/${taskId}` ),
   moveTask: (taskId, newListId, newPosition) => api.post(`/tasks/tasks/${taskId}/move`, { newListId, newPosition }),
   reorderTasks: (listId, taskOrders) => api.post('/tasks/tasks/reorder', { listId, taskOrders }),
 };

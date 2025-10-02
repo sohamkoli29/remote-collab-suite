@@ -32,7 +32,6 @@ export const useTaskBoard = (workspaceId) => {
           console.log('Successfully joined task board room');
         } catch (socketError) {
           console.warn('Failed to join task board room, but continuing:', socketError);
-          // Continue even if socket connection fails
         }
 
       } catch (error) {
@@ -49,16 +48,19 @@ export const useTaskBoard = (workspaceId) => {
 
     initializeTaskBoard();
 
-    // Socket event listeners for real-time updates
+    // Socket event handlers
     const handleTaskCreated = (task) => {
+      console.log('📨 Socket: task-created received:', task);
       if (isMounted) {
-        setLists(prevLists => 
-          prevLists.map(list => 
+        setLists(prevLists => {
+          const updatedLists = prevLists.map(list => 
             list.id === task.list_id 
               ? { ...list, tasks: [...(list.tasks || []), task] }
               : list
-          )
-        );
+          );
+          console.log('🔄 Updated lists after task creation:', updatedLists);
+          return updatedLists;
+        });
       }
     };
 
@@ -89,14 +91,12 @@ export const useTaskBoard = (workspaceId) => {
     const handleTaskMoved = ({ task, sourceListId, destinationListId }) => {
       if (isMounted) {
         setLists(prevLists => {
-          // Remove task from source list
           const updatedLists = prevLists.map(list =>
             list.id === sourceListId
               ? { ...list, tasks: (list.tasks || []).filter(t => t.id !== task.id) }
               : list
           );
 
-          // Add task to destination list
           return updatedLists.map(list =>
             list.id === destinationListId
               ? { ...list, tasks: [...(list.tasks || []), task] }
@@ -107,8 +107,13 @@ export const useTaskBoard = (workspaceId) => {
     };
 
     const handleListCreated = (newList) => {
+      console.log('📨 Socket: list-created received:', newList);
       if (isMounted) {
-        setLists(prevLists => [...prevLists, { ...newList, tasks: [] }]);
+        setLists(prevLists => {
+          const updatedLists = [...prevLists, { ...newList, tasks: [] }];
+          console.log('🔄 Updated lists after list creation:', updatedLists);
+          return updatedLists;
+        });
       }
     };
 
@@ -128,31 +133,36 @@ export const useTaskBoard = (workspaceId) => {
       }
     };
 
-    // Subscribe to events (only if socket is connected)
-    if (socketService.isConnected) {
-      socketService.on('task-created', handleTaskCreated);
-      socketService.on('task-updated', handleTaskUpdated);
-      socketService.on('task-deleted', handleTaskDeleted);
-      socketService.on('task-moved', handleTaskMoved);
-      socketService.on('list-created', handleListCreated);
-      socketService.on('list-updated', handleListUpdated);
-      socketService.on('list-deleted', handleListDeleted);
-    }
+    const handleSocketConnected = () => {
+      console.log('🔌 Socket connected/reconnected, rejoining task board');
+      if (isMounted) {
+        socketService.joinTaskBoard(workspaceId, currentUser.id).catch(console.error);
+      }
+    };
+
+    // Register all socket event listeners
+    // These will work regardless of current connection state
+    socketService.on('task-created', handleTaskCreated);
+    socketService.on('task-updated', handleTaskUpdated);
+    socketService.on('task-deleted', handleTaskDeleted);
+    socketService.on('task-moved', handleTaskMoved);
+    socketService.on('list-created', handleListCreated);
+    socketService.on('list-updated', handleListUpdated);
+    socketService.on('list-deleted', handleListDeleted);
+    socketService.on('socket-connected', handleSocketConnected);
 
     // Cleanup
     return () => {
       isMounted = false;
       
-      // Only unsubscribe if we subscribed
-      if (socketService.isConnected) {
-        socketService.off('task-created', handleTaskCreated);
-        socketService.off('task-updated', handleTaskUpdated);
-        socketService.off('task-deleted', handleTaskDeleted);
-        socketService.off('task-moved', handleTaskMoved);
-        socketService.off('list-created', handleListCreated);
-        socketService.off('list-updated', handleListUpdated);
-        socketService.off('list-deleted', handleListDeleted);
-      }
+      socketService.off('task-created', handleTaskCreated);
+      socketService.off('task-updated', handleTaskUpdated);
+      socketService.off('task-deleted', handleTaskDeleted);
+      socketService.off('task-moved', handleTaskMoved);
+      socketService.off('list-created', handleListCreated);
+      socketService.off('list-updated', handleListUpdated);
+      socketService.off('list-deleted', handleListDeleted);
+      socketService.off('socket-connected', handleSocketConnected);
       
       try {
         socketService.leaveTaskBoard(workspaceId, currentUser.id);
@@ -178,7 +188,10 @@ export const useTaskBoard = (workspaceId) => {
       const response = await taskAPI.createList({ workspaceId, name });
       const newList = response.data.list;
       
-      // Emit socket event for real-time update
+      // Optimistically update local state immediately
+      setLists(prevLists => [...prevLists, { ...newList, tasks: [] }]);
+      
+      // Also emit for other clients
       if (socketService.isConnected) {
         socketService.emitListCreated(workspaceId, newList);
       }
@@ -195,7 +208,14 @@ export const useTaskBoard = (workspaceId) => {
       const response = await taskAPI.updateList(listId, updates);
       const updatedList = response.data.list;
       
-      // Emit socket event for real-time update
+      // Optimistically update local state immediately
+      setLists(prevLists =>
+        prevLists.map(list =>
+          list.id === updatedList.id ? { ...list, ...updatedList } : list
+        )
+      );
+      
+      // Also emit for other clients
       if (socketService.isConnected) {
         socketService.emitListUpdated(workspaceId, updatedList);
       }
@@ -211,7 +231,10 @@ export const useTaskBoard = (workspaceId) => {
     try {
       await taskAPI.deleteList(listId);
       
-      // Emit socket event for real-time update
+      // Optimistically update local state immediately
+      setLists(prevLists => prevLists.filter(list => list.id !== listId));
+      
+      // Also emit for other clients
       if (socketService.isConnected) {
         socketService.emitListDeleted(workspaceId, listId);
       }
@@ -222,76 +245,97 @@ export const useTaskBoard = (workspaceId) => {
   };
 
   const createTask = async (listId, taskData) => {
-  try {
-    console.log('🔄 createTask called with:', { listId, taskData });
-    
-    // Debug: Check if parameters are correct
-    if (typeof listId === 'object') {
-      console.warn('⚠️ listId is an object, might be parameter mismatch');
-      console.log('listId value:', listId);
-    }
-    
-    // Prepare the request data correctly
-    const requestData = { 
-      listId: typeof listId === 'string' ? listId : listId?.listId,
-      title: taskData?.title || listId?.title,
-      description: taskData?.description || listId?.description,
-      assigneeId: taskData?.assigneeId || listId?.assigneeId,
-      dueDate: taskData?.dueDate || listId?.dueDate,
-      priority: taskData?.priority || listId?.priority || 'medium'
-    };
-    
-    // Validate required fields
-    if (!requestData.listId) {
-      throw new Error('List ID is required');
-    }
-    if (!requestData.title) {
-      throw new Error('Title is required');
-    }
-    
-    console.log('📤 Sending to API:', JSON.stringify(requestData, null, 2));
-    
-    const response = await taskAPI.createTask(requestData);
-    const newTask = response.data.task;
-    
-    console.log('✅ Task created successfully:', newTask);
-    
-    // Emit socket event for real-time update
-    if (socketService.isConnected) {
-      socketService.emitTaskCreated(workspaceId, newTask);
-    }
-    
-    return newTask;
-  } catch (error) {
-    console.error('❌ Error creating task:', error);
-    
-    if (error.response) {
-      console.error('📡 Server Response:', {
-        status: error.response.status,
-        data: error.response.data,
-        headers: error.response.headers
+    try {
+      console.log('🔄 createTask called with:', { listId, taskData });
+      
+      // Handle parameter variations
+      let requestData;
+      if (typeof listId === 'object' && !taskData) {
+        // Called with single object parameter
+        requestData = {
+          listId: listId.listId,
+          title: listId.title,
+          description: listId.description,
+          assigneeId: listId.assigneeId,
+          dueDate: listId.dueDate,
+          priority: listId.priority || 'medium'
+        };
+      } else {
+        // Called with separate parameters
+        requestData = {
+          listId,
+          title: taskData.title,
+          description: taskData.description,
+          assigneeId: taskData.assigneeId,
+          dueDate: taskData.dueDate,
+          priority: taskData.priority || 'medium'
+        };
+      }
+      
+      // Validate required fields
+      if (!requestData.listId) {
+        throw new Error('List ID is required');
+      }
+      if (!requestData.title) {
+        throw new Error('Title is required');
+      }
+      
+      console.log('📤 Sending to API:', requestData);
+      
+      const response = await taskAPI.createTask(requestData);
+      const newTask = response.data.task;
+      
+      console.log('✅ Task created successfully:', newTask);
+      
+      // Optimistically update local state immediately
+      setLists(prevLists => {
+        const updatedLists = prevLists.map(list => 
+          list.id === newTask.list_id 
+            ? { ...list, tasks: [...(list.tasks || []), newTask] }
+            : list
+        );
+        console.log('🔄 Updated lists after task creation:', updatedLists);
+        return updatedLists;
       });
       
-      const serverError = error.response.data;
-      const errorMessage = serverError.error || `Server error: ${error.response.status}`;
-      const errorDetails = serverError.details ? ` - ${serverError.details}` : '';
+      // Also emit for other clients
+      if (socketService.isConnected) {
+        socketService.emitTaskCreated(workspaceId, newTask);
+      }
       
-      throw new Error(`${errorMessage}${errorDetails}`);
-    } else if (error.request) {
-      console.error('🚫 No response received from server');
-      throw new Error('No response from server. Please check your connection.');
-    } else {
-      console.error('💥 Request setup error:', error.message);
-      throw error;
+      return newTask;
+    } catch (error) {
+      console.error('❌ Error creating task:', error);
+      
+      if (error.response) {
+        const serverError = error.response.data;
+        const errorMessage = serverError.error || `Server error: ${error.response.status}`;
+        const errorDetails = serverError.details ? ` - ${serverError.details}` : '';
+        throw new Error(`${errorMessage}${errorDetails}`);
+      } else if (error.request) {
+        throw new Error('No response from server. Please check your connection.');
+      } else {
+        throw error;
+      }
     }
-  }
-};
+  };
+
   const updateTask = async (taskId, updates) => {
     try {
       const response = await taskAPI.updateTask(taskId, updates);
       const updatedTask = response.data.task;
       
-      // Emit socket event for real-time update
+      // Optimistically update local state immediately
+      setLists(prevLists =>
+        prevLists.map(list => ({
+          ...list,
+          tasks: (list.tasks || []).map(task =>
+            task.id === updatedTask.id ? updatedTask : task
+          )
+        }))
+      );
+      
+      // Also emit for other clients
       if (socketService.isConnected) {
         socketService.emitTaskUpdated(workspaceId, updatedTask);
       }
@@ -307,7 +351,15 @@ export const useTaskBoard = (workspaceId) => {
     try {
       await taskAPI.deleteTask(taskId);
       
-      // Emit socket event for real-time update
+      // Optimistically update local state immediately
+      setLists(prevLists =>
+        prevLists.map(list => ({
+          ...list,
+          tasks: (list.tasks || []).filter(task => task.id !== taskId)
+        }))
+      );
+      
+      // Also emit for other clients
       if (socketService.isConnected) {
         socketService.emitTaskDeleted(workspaceId, taskId);
       }
