@@ -17,7 +17,10 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "socket.io": "^4.7.2",
-    "y-websocket": "^1.4.6",
+    "uuid": "^13.0.0",
+    "ws": "^8.18.3",
+    "y-protocols": "^1.0.6",
+    "y-websocket": "^1.5.4",
     "yjs": "^13.6.6"
   },
   "devDependencies": {

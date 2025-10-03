@@ -90,4 +90,29 @@ export const taskAPI = {
   reorderTasks: (listId, taskOrders) => api.post('/tasks/tasks/reorder', { listId, taskOrders }),
 };
 
+
+// Add document API endpoints
+export const documentAPI = {
+  getDocuments: (workspaceId) => api.get(`/documents/workspace/${workspaceId}`),
+  getDocument: (documentId) => api.get(`/documents/${documentId}`),
+  createDocument: (documentData) => api.post('/documents', documentData),
+  updateDocument: (documentId, updates) => api.put(`/documents/${documentId}`, updates),
+  deleteDocument: (documentId) => api.delete(`/documents/${documentId}`),
+  getCollaborators: (documentId) => api.get(`/documents/${documentId}/collaborators`),
+};
+
+// Add to API exports
+export const documentSnapshotAPI = {
+  getSnapshots: (documentId, limit = 50, offset = 0) => 
+    api.get(`/document-snapshots/document/${documentId}?limit=${limit}&offset=${offset}`),
+  
+  createSnapshot: (documentId, description) => 
+    api.post(`/document-snapshots/document/${documentId}`, { description }),
+  
+  restoreSnapshot: (snapshotId) => 
+    api.post(`/document-snapshots/${snapshotId}/restore`),
+  
+  deleteSnapshot: (snapshotId) => 
+    api.delete(`/document-snapshots/${snapshotId}`),
+};
 export default api;

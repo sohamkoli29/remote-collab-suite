@@ -6,6 +6,7 @@ import MembersPanel from '../components/workspace/MembersPanel';
 import InviteModal from '../components/workspace/InviteModal';
 import ChatPanel from '../components/chat/ChatPanel';
 import TaskBoard from '../components/tasks/TaskBoard';
+import DocumentWorkspace from '../components/documents/DocumentWorkspace';
 
 const Workspace = () => {
   const { workspaceId } = useParams();
@@ -166,7 +167,7 @@ const Workspace = () => {
       {/* Navigation Tabs */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
-          {['overview', 'tasks', 'chat', 'members', 'settings'].map((tab) => (
+          {['overview', 'documents', 'tasks', 'chat', 'members', 'settings'].map((tab) => (
             <button
               key={tab}
               onClick={() => {
@@ -243,6 +244,7 @@ const Workspace = () => {
                   </button>
                   
                   <button 
+                    onClick={() => setActiveTab('documents')}
                     className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors"
                   >
                     <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
@@ -251,8 +253,8 @@ const Workspace = () => {
                       </svg>
                     </div>
                     <div className="text-left">
-                      <div className="font-medium text-gray-900">New Document</div>
-                      <div className="text-sm text-gray-600">Start collaborative editing</div>
+                      <div className="font-medium text-gray-900">Documents</div>
+                      <div className="text-sm text-gray-600">Collaborative editing</div>
                     </div>
                   </button>
                   
@@ -373,6 +375,12 @@ const Workspace = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'documents' && (
+          <div className="space-y-6">
+            <DocumentWorkspace workspaceId={workspaceId} />
           </div>
         )}
 

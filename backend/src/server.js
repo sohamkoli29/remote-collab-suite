@@ -8,8 +8,11 @@ import workspaceRoutes from './routes/workspaces.js';
 import userRoutes from './routes/users.js';
 import chatRoutes from './routes/chat.js';
 import taskRoutes from './routes/tasks.js';
+import documentRoutes from './routes/documents.js';
+import documentSnapshotRoutes from './routes/documentSnapshots.js';
 import { setupChatHandlers } from './sockets/chatHandlers.js';
 import { setupTaskHandlers } from './sockets/taskHandlers.js';
+import { setupDocumentServer, getActiveDocuments } from './sockets/documentServer.js';
 
 // Load environment variables
 dotenv.config();
@@ -37,6 +40,8 @@ app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/document-snapshots', documentSnapshotRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -47,16 +52,42 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Setup Socket.io handlers
+// Document server status endpoint
+app.get('/api/document-server/status', (req, res) => {
+  try {
+    const activeDocs = getActiveDocuments();
+    
+    res.json({
+      status: 'running',
+      activeDocuments: activeDocs.length,
+      documents: activeDocs
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+});
+
+// Setup Socket.io handlers BEFORE server.listen()
 setupChatHandlers(io);
 setupTaskHandlers(io);
+
+// Setup document WebSocket server BEFORE server.listen()
+// IMPORTANT: This must be set up before listening because it registers the 'upgrade' event handler
+setupDocumentServer(server);
 
 const PORT = process.env.PORT || 3001;
 
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔗 Client URL: ${process.env.CLIENT_URL}`);
-  console.log(`💬 Chat server ready`);
-  console.log(`📋 Task board server ready`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+  console.log(`💬 Chat server ready (Socket.io)`);
+  console.log(`📋 Task board server ready (Socket.io)`);
+  console.log(`📄 Document collaboration server ready (WebSocket)`);
+  console.log(`\n📡 WebSocket endpoints:`);
+  console.log(`   - Socket.io: /socket.io/`);
+  console.log(`   - Documents: /documents/:documentId`);
 });

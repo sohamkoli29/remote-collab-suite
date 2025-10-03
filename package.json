@@ -16,6 +16,9 @@
     "dev": "concurrently \"npm run dev:client\"  \"npm run dev:server\""
   },
   "dependencies": {
-    "concurrently": "^9.2.1"
+    "@tiptap/extension-placeholder": "^3.6.3",
+    "@tiptap/extension-text-align": "^3.6.3",
+    "concurrently": "^9.2.1",
+    "lucide-react": "^0.544.0"
   }
 }
