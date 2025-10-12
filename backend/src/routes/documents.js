@@ -146,7 +146,7 @@ router.post('/', async (req, res) => {
         title,
         content: buffer,
         created_by: req.userId,
-        version: 1,
+        current_version: 1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }])
