@@ -13,6 +13,8 @@ import documentSnapshotRoutes from './routes/documentSnapshots.js';
 import { setupChatHandlers } from './sockets/chatHandlers.js';
 import { setupTaskHandlers } from './sockets/taskHandlers.js';
 import { setupDocumentServer, getActiveDocuments } from './sockets/documentServer.js';
+import { setupVideoHandlers } from './sockets/videoHandlers.js';
+import { setupWhiteboardHandlers } from './sockets/whiteboardHandlers.js';
 
 // Load environment variables
 dotenv.config();
@@ -73,6 +75,8 @@ app.get('/api/document-server/status', (req, res) => {
 // Setup Socket.io handlers BEFORE server.listen()
 setupChatHandlers(io);
 setupTaskHandlers(io);
+setupVideoHandlers(io);
+setupWhiteboardHandlers(io);
 
 // Setup document WebSocket server BEFORE server.listen()
 // IMPORTANT: This must be set up before listening because it registers the 'upgrade' event handler
@@ -90,4 +94,6 @@ server.listen(PORT, () => {
   console.log(`\n📡 WebSocket endpoints:`);
   console.log(`   - Socket.io: /socket.io/`);
   console.log(`   - Documents: /documents/:documentId`);
+  console.log(`📹 Video call server ready (Socket.io)`);
+  console.log(`🎨 Whiteboard server ready (Socket.io)`);
 });

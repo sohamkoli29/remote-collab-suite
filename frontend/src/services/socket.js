@@ -73,7 +73,6 @@ class SocketService {
     });
   }
 
-  // ADD THIS MISSING METHOD
   async ensureConnection() {
     if (!this.socket || !this.isConnected) {
       await this.connect();
@@ -89,23 +88,23 @@ class SocketService {
   }
 
   // Join task board room
- async joinTaskBoard(workspaceId, userId) {
-  try {
-    await this.ensureConnection();
-    
-    if (this.socket && this.isConnected) {
-      this.socket.emit('join-task-board', { workspaceId, userId });
-      console.log(`✅ Joined task board: ${workspaceId}`);
-    } else {
-      console.warn('⚠️ Socket not connected, cannot join task board');
-      // Queue the join action for when connection is restored
-      this.queuedActions.push(() => this.joinTaskBoard(workspaceId, userId));
+  async joinTaskBoard(workspaceId, userId) {
+    try {
+      await this.ensureConnection();
+      
+      if (this.socket && this.isConnected) {
+        this.socket.emit('join-task-board', { workspaceId, userId });
+        console.log(`✅ Joined task board: ${workspaceId}`);
+      } else {
+        console.warn('⚠️ Socket not connected, cannot join task board');
+        // Queue the join action for when connection is restored
+        this.queuedActions.push(() => this.joinTaskBoard(workspaceId, userId));
+      }
+    } catch (error) {
+      console.error('❌ Error joining task board:', error);
+      throw error;
     }
-  } catch (error) {
-    console.error('❌ Error joining task board:', error);
-    throw error;
   }
-}
 
   // Leave a workspace chat room
   leaveWorkspaceChat(workspaceId, userId) {
@@ -137,17 +136,15 @@ class SocketService {
   }
 
   // Task events
-emitTaskCreated(workspaceId, task) {
-  if (!this.socket || !this.isConnected) {
-    console.warn('⚠️ Socket not connected, cannot emit task-created');
-    // You might want to queue this or use a fallback
-    return;
+  emitTaskCreated(workspaceId, task) {
+    if (!this.socket || !this.isConnected) {
+      console.warn('⚠️ Socket not connected, cannot emit task-created');
+      return;
+    }
+    
+    console.log('📤 Emitting task-created for workspace:', workspaceId);
+    this.socket.emit('task-created', { workspaceId, task });
   }
-  
-  console.log('📤 Emitting task-created for workspace:', workspaceId);
-  this.socket.emit('task-created', { workspaceId, task });
-}
-
 
   emitTaskUpdated(workspaceId, task) {
     if (!this.socket || !this.isConnected) return;
@@ -165,15 +162,15 @@ emitTaskCreated(workspaceId, task) {
   }
 
   // List events
-emitListCreated(workspaceId, list) {
-  if (!this.socket || !this.isConnected) {
-    console.warn('⚠️ Socket not connected, cannot emit list-created');
-    return;
+  emitListCreated(workspaceId, list) {
+    if (!this.socket || !this.isConnected) {
+      console.warn('⚠️ Socket not connected, cannot emit list-created');
+      return;
+    }
+    
+    console.log('📤 Emitting list-created for workspace:', workspaceId);
+    this.socket.emit('list-created', { workspaceId, list });
   }
-  
-  console.log('📤 Emitting list-created for workspace:', workspaceId);
-  this.socket.emit('list-created', { workspaceId, list });
-}
 
   emitListUpdated(workspaceId, list) {
     if (!this.socket || !this.isConnected) return;
@@ -201,6 +198,71 @@ emitListCreated(workspaceId, list) {
     if (!this.socket || !this.isConnected) return;
     this.socket.emit('mark-message-read', { messageId, userId, workspaceId });
   }
+
+  // ==================== VIDEO CALL METHODS ====================
+  
+  async joinVideoCall(workspaceId, userId, userName) {
+    await this.ensureConnection();
+    
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Join video call timeout'));
+      }, 10000);
+
+      this.socket.emit('join-video-call', { workspaceId, userId, userName }, (response) => {
+        clearTimeout(timeout);
+        
+        if (response?.error) {
+          console.error('❌ Failed to join video call:', response.error);
+          reject(new Error(response.error.message));
+        } else {
+          console.log(`✅ Joined video call: ${workspaceId}`);
+          resolve(response);
+        }
+      });
+    });
+  }
+
+  leaveVideoCall(workspaceId, userId) {
+    if (!this.socket || !this.isConnected) return;
+    
+    this.socket.emit('leave-video-call', { workspaceId, userId }, (response) => {
+      console.log(`👋 Left video call: ${workspaceId}`);
+    });
+  }
+
+  sendVideoOffer(targetSocketId, offer, userId, userName) {
+    if (!this.socket || !this.isConnected) {
+      console.warn('⚠️ Socket not connected, cannot send video offer');
+      return;
+    }
+    console.log(`📹 Sending video offer to ${targetSocketId}`);
+    this.socket.emit('video-offer', { targetSocketId, offer, userId, userName });
+  }
+
+  sendVideoAnswer(targetSocketId, answer, userId, userName) {
+    if (!this.socket || !this.isConnected) {
+      console.warn('⚠️ Socket not connected, cannot send video answer');
+      return;
+    }
+    console.log(`📹 Sending video answer to ${targetSocketId}`);
+    this.socket.emit('video-answer', { targetSocketId, answer, userId, userName });
+  }
+
+  sendIceCandidate(targetSocketId, candidate) {
+    if (!this.socket || !this.isConnected) {
+      console.warn('⚠️ Socket not connected, cannot send ICE candidate');
+      return;
+    }
+    this.socket.emit('ice-candidate', { targetSocketId, candidate });
+  }
+
+  toggleMedia(workspaceId, mediaType, enabled) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('toggle-media', { workspaceId, mediaType, enabled });
+  }
+
+  // ==================== END VIDEO CALL METHODS ====================
 
   // Event subscription
   on(event, callback) {
@@ -247,6 +309,70 @@ emitListCreated(workspaceId, list) {
       this.isConnecting = false;
     }
   }
+
+  // ==================== WHITEBOARD METHODS ====================
+  
+  async joinWhiteboard(workspaceId, userId, userName) {
+    await this.ensureConnection();
+    
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Join whiteboard timeout'));
+      }, 10000);
+
+      this.socket.emit('join-whiteboard', { workspaceId, userId, userName }, (response) => {
+        clearTimeout(timeout);
+        
+        if (response?.error) {
+          console.error('❌ Failed to join whiteboard:', response.error);
+          reject(new Error(response.error.message));
+        } else {
+          console.log(`✅ Joined whiteboard: ${workspaceId}`);
+          resolve(response);
+        }
+      });
+    });
+  }
+
+  leaveWhiteboard(workspaceId, userId) {
+    if (!this.socket || !this.isConnected) return;
+    
+    this.socket.emit('leave-whiteboard', { workspaceId, userId }, (response) => {
+      console.log(`👋 Left whiteboard: ${workspaceId}`);
+    });
+  }
+
+  emitWhiteboardDraw(workspaceId, element) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('whiteboard-draw', { workspaceId, element });
+  }
+
+  emitWhiteboardUpdateElement(workspaceId, elementId, updates) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('whiteboard-update-element', { workspaceId, elementId, updates });
+  }
+
+  emitWhiteboardDeleteElement(workspaceId, elementId) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('whiteboard-delete-element', { workspaceId, elementId });
+  }
+
+  emitWhiteboardClear(workspaceId) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('whiteboard-clear', { workspaceId });
+  }
+
+  emitWhiteboardCursorMove(workspaceId, x, y) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('whiteboard-cursor-move', { workspaceId, x, y });
+  }
+
+  emitWhiteboardUndo(workspaceId) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('whiteboard-undo', { workspaceId });
+  }
+
+  // ==================== END WHITEBOARD METHODS ====================
 
   // Get connection status
   getStatus() {
