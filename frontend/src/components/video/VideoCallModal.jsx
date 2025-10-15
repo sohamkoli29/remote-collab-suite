@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import  { useEffect, useRef, useState } from 'react';
 import { useVideoCall } from '../../hooks/useVideoCall';
 import VideoControls from './VideoControls';
 import VideoParticipant from './VideoParticipant';

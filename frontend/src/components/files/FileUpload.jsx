@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { fileAPI } from '../../services/api';
 
 const FileUpload = ({ workspaceId, onUploadComplete }) => {

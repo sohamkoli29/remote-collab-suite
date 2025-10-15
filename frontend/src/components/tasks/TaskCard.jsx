@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTaskBoard } from '../../hooks/useTaskBoard';
 import { useAuth } from '../../contexts/AuthContext';
 import TaskModal from './TaskModal';

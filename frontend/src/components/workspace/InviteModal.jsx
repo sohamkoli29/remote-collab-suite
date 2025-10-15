@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import { userAPI } from '../../services/api';
 
 const InviteModal = ({ onClose, onInvite, existingMembers }) => {

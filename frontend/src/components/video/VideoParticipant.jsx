@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import  { useEffect, useRef, useState } from 'react';
 
 const VideoParticipant = ({ socketId, stream, participant }) => {
   const videoRef = useRef(null);
