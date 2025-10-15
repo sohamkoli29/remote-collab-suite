@@ -11,7 +11,8 @@ import DocumentWorkspace from '../components/documents/DocumentWorkspace';
 import VideoCallModal from '../components/video/VideoCallModal';
 import CallNotification from '../components/video/CallNotification';
 import WhiteboardCanvas from '../components/whiteboard/WhiteboardCanvas';
-
+import FileUpload from '../components/files/FileUpload';
+import FileBrowser from '../components/files/FileBrowser';
 
 const Workspace = () => {
   const { workspaceId } = useParams();
@@ -28,6 +29,7 @@ const Workspace = () => {
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [incomingCall, setIncomingCall] = useState(null);
   const [showWhiteboard, setShowWhiteboard] = useState(false);
+  const [showFileUpload, setShowFileUpload] = useState(false);
 
   useEffect(() => {
     fetchWorkspace();
@@ -210,7 +212,7 @@ const handleDeclineCall = () => {
       {/* Navigation Tabs */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
-          {['overview', 'documents', 'tasks','whiteboard', 'chat', 'members', 'settings'].map((tab) => (
+          {['overview', 'documents', 'tasks','files','whiteboard', 'chat', 'members', 'settings'].map((tab) => (
             <button
               key={tab}
               onClick={() => {
@@ -508,6 +510,49 @@ const handleDeclineCall = () => {
     </div>
   </div>
 )}
+
+{activeTab === 'files' && (
+  <div className="space-y-6">
+    <div className="card">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h3 className="text-lg font-medium">Workspace Files</h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Share and manage files with your team
+          </p>
+        </div>
+        <button
+          onClick={() => setShowFileUpload(!showFileUpload)}
+          className="btn-primary flex items-center space-x-2"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          <span>{showFileUpload ? 'Cancel' : 'Upload File'}</span>
+        </button>
+      </div>
+
+      {/* File Upload Section */}
+      {showFileUpload && (
+        <div className="mb-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+          <FileUpload
+            workspaceId={workspaceId}
+            onUploadComplete={(file) => {
+              setShowFileUpload(false);
+              // Refresh file list
+              window.location.reload(); // Simple refresh, or implement proper state update
+            }}
+          />
+        </div>
+      )}
+
+      {/* File Browser */}
+      <FileBrowser workspaceId={workspaceId} />
+    </div>
+  </div>
+)}
+
+
 
 
         {activeTab === 'chat' && (

@@ -47,6 +47,17 @@ export const workspaceAPI = {
 export const userAPI = {
   search: (email) => api.get(`/users/search?email=${email}`),
   getProfile: () => api.get('/users/profile'),
+  updateProfile: (profileData) => api.put('/users/profile', profileData),
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return api.post('/users/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  deleteAvatar: () => api.delete('/users/avatar'),
 };
 
 export const chatAPI = {
@@ -115,4 +126,25 @@ export const documentSnapshotAPI = {
   deleteSnapshot: (snapshotId) => 
     api.delete(`/document-snapshots/${snapshotId}`),
 };
+
+export const fileAPI = {
+  upload: (workspaceId, file, description) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('workspaceId', workspaceId);
+    if (description) formData.append('description', description);
+    
+    return api.post('/files/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  getWorkspaceFiles: (workspaceId, limit = 50, offset = 0) => 
+    api.get(`/files/workspace/${workspaceId}?limit=${limit}&offset=${offset}`),
+  getFile: (fileId) => api.get(`/files/${fileId}`),
+  deleteFile: (fileId) => api.delete(`/files/${fileId}`),
+};
+
+
 export default api;

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../services/api'; // Make sure this import path is correct
+import { authAPI, userAPI } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -67,12 +67,88 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // New: Update user profile
+  const updateUserProfile = async (profileData) => {
+    try {
+      const response = await userAPI.updateProfile(profileData);
+      const updatedUser = response.data.user;
+      
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      
+      return { success: true, user: updatedUser };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Profile update failed' 
+      };
+    }
+  };
+
+  // New: Upload avatar
+  const uploadAvatar = async (file) => {
+    try {
+      const response = await userAPI.uploadAvatar(file);
+      const updatedUser = response.data.user;
+      
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      
+      return { success: true, user: updatedUser };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Avatar upload failed' 
+      };
+    }
+  };
+
+  // New: Delete avatar
+  const deleteAvatar = async () => {
+    try {
+      const response = await userAPI.deleteAvatar();
+      const updatedUser = response.data.user;
+      
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      
+      return { success: true, user: updatedUser };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Avatar deletion failed' 
+      };
+    }
+  };
+
+  // New: Refresh user data
+  const refreshUser = async () => {
+    try {
+      const response = await userAPI.getProfile();
+      const updatedUser = response.data.user;
+      
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      
+      return { success: true, user: updatedUser };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Failed to refresh user data' 
+      };
+    }
+  };
+
   const value = {
     user,
     login,
     register,
     logout,
-    loading
+    loading,
+    updateUserProfile,
+    uploadAvatar,
+    deleteAvatar,
+    refreshUser
   };
 
   return (

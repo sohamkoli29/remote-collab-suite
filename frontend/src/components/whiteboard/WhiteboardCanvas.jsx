@@ -34,6 +34,49 @@ const WhiteboardCanvas = ({ workspaceId, currentUser, onClose }) => {
     initialize();
   }, [initialize]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Prevent shortcuts when typing in input fields
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      // Tool shortcuts
+      if (e.key.toLowerCase() === 'p' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setTool('pen');
+      } else if (e.key.toLowerCase() === 'e' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setTool('eraser');
+      } else if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setTool('rectangle');
+      } else if (e.key.toLowerCase() === 'c' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setTool('circle');
+      }
+      // Undo/Redo shortcuts
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (canUndo) {
+          undo();
+        }
+      } else if (
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z')
+      ) {
+        e.preventDefault();
+        if (canRedo) {
+          redo();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canUndo, canRedo, undo, redo]);
+
   // Handle window resize
   useEffect(() => {
     const updateSize = () => {

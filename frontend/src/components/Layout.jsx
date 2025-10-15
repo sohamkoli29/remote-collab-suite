@@ -1,8 +1,11 @@
-import React from 'react';
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import ProfileEditorModal from './profile/ProfileEditorModal';
+
 import { Link, useLocation } from 'react-router-dom';
 
 const Layout = ({ children }) => {
+  const [showProfile, setShowProfile] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
 
@@ -41,6 +44,28 @@ const Layout = ({ children }) => {
             </div>
 
             <div className="flex items-center space-x-4">
+              <button
+                    onClick={() => setShowProfile(true)}
+                   className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 transition-colors"
+                  >
+                    {user?.avatar_url ? (
+                     <img
+                       src={user.avatar_url}
+                       alt={`${user.first_name} ${user.last_name}`}
+                       className="w-8 h-8 rounded-full object-cover"
+                     />
+                   ) : (
+                     <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+                       <span className="text-white text-sm font-bold">
+                          {user?.first_name?.charAt(0)?.toUpperCase()}
+                       </span>
+                     </div>
+                   )}
+                   <span className="text-sm font-medium text-gray-700">
+                      {user?.first_name} {user?.last_name}
+                   </span>
+                  </button>
+
               <span className="text-sm text-gray-700">
                 Welcome, {user?.firstName} {user?.lastName}
               </span>
@@ -59,6 +84,9 @@ const Layout = ({ children }) => {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {children}
       </main>
+      {showProfile && (
+  <ProfileEditorModal onClose={() => setShowProfile(false)} />
+)}
     </div>
   );
 };

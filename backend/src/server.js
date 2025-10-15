@@ -8,6 +8,7 @@ import workspaceRoutes from './routes/workspaces.js';
 import userRoutes from './routes/users.js';
 import chatRoutes from './routes/chat.js';
 import taskRoutes from './routes/tasks.js';
+import fileRoutes from './routes/files.js';
 import documentRoutes from './routes/documents.js';
 import documentSnapshotRoutes from './routes/documentSnapshots.js';
 import { setupChatHandlers } from './sockets/chatHandlers.js';
@@ -44,6 +45,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/document-snapshots', documentSnapshotRoutes);
+app.use('/api/files', fileRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
