@@ -14,6 +14,8 @@ export const useDocument = (documentId, workspaceId) => {
   const reconnectTimeoutRef = useRef(null);
   const reconnectAttemptsRef = useRef(0);
 
+
+  const backendUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
   useEffect(() => {
     if (!documentId || !workspaceId || !currentUser) return;
 
@@ -29,7 +31,7 @@ export const useDocument = (documentId, workspaceId) => {
         ydocRef.current = newYdoc;
 
         // Create WebSocket connection to Y-WebSocket server
-        const wsUrl = `ws://localhost:3001/documents/${documentId}`;
+        const wsUrl = `${backendUrl}/documents/${documentId}`;
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
