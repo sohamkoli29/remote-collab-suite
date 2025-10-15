@@ -182,6 +182,6 @@ npm install concurrently
 ```
 
 ## Author
-**Developed by:** Soham Suraj Koli
-*Pimpri Chinchwad University,  B.Tech CSE*
+**Developed by:** Soham Suraj Koli.  
+*Pimpri Chinchwad University,  B.Tech CSE*.
 
