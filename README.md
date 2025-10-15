@@ -152,16 +152,17 @@ cd remote-work-collaboration-suite
 ```bash
 
 # Create a .env file inside /backend
+NODE_ENV=development
 PORT=3001
 SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 JWT_SECRET=your_jwt_secret
-FRONTEND_URL=http://localhost:5173
+CLIENT_URL=http://localhost:5173
 
 # Create a .env file inside /frontend
-VITE_BACKEND_URL=http://localhost:3001/api
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_BACKEND_URL=http://localhost:3001
+VITE_WS_URL=ws://localhost:3001
 
 ``` 
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import ProfileEditorModal from './profile/ProfileEditorModal';
-
+import Footer from './Footer/Footer';
 import { Link, useLocation } from 'react-router-dom';
 
 const Layout = ({ children }) => {
@@ -87,6 +87,8 @@ const Layout = ({ children }) => {
       {showProfile && (
   <ProfileEditorModal onClose={() => setShowProfile(false)} />
 )}
+
+        <Footer />
     </div>
   );
 };
