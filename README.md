@@ -9,16 +9,16 @@ It’s built with **React + Node.js + Supabase**, leveraging **WebRTC**, **WebSo
 ---
 
 ##  Table of Contents
-- [ Project Aim](#-project-aim)
-- [ Features](#-features)
-- [ Technology Stack](#️-technology-stack)
-- [ Project Structure](#-project-structure)
-- [ Core Modules](#-core-modules)
-- [ Authentication](#-authentication)
-- [ Getting Started](#️-getting-started)
-- [ Deployment](#-deployment)
-- [ Screenshots (Optional)](#-screenshots-optional)
-- [ License](#-license)
+- [ Project Aim](#project-aim)
+- [ Features](#features)
+- [ Technology Stack](#️technology-stack)
+- [ Project Structure](#project-structure)
+- [ Core Modules](#core-modules)
+- [ Authentication](#authentication)
+- [ Getting Started](#️getting-started)
+- [ Environment Variables](#add-environment-variables)
+- [ Quick Setup](#quick-setup)
+
 
 ---
 
