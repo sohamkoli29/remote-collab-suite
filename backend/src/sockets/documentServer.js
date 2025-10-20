@@ -153,6 +153,7 @@ function broadcastToOtherClients(documentId, sender, message) {
 }
 
 // Load document content from Supabase
+// Load document content from Supabase
 async function loadDocumentFromSupabase(documentId, ydoc) {
   try {
     const { data: document, error } = await supabase
@@ -171,7 +172,7 @@ async function loadDocumentFromSupabase(documentId, ydoc) {
 
     if (document?.content) {
       try {
-        // Convert base64 back to Uint8Array
+        // FIXED: Now consistent - content is stored as base64
         const buffer = Buffer.from(document.content, 'base64');
         const update = new Uint8Array(buffer);
         Y.applyUpdate(ydoc, update);

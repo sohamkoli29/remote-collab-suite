@@ -100,13 +100,7 @@ router.get('/:documentId', async (req, res) => {
       return res.status(403).json({ error: 'Access denied to document' });
     }
 
-    // Convert binary content to base64 for transmission
-    const documentWithContent = {
-      ...document,
-      content: document.content ? document.content.toString('base64') : null
-    };
-
-    res.json({ document: documentWithContent });
+    res.json({ document });
   } catch (error) {
     console.error('Error fetching document:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -134,17 +128,25 @@ router.post('/', async (req, res) => {
       return res.status(403).json({ error: 'Access denied to workspace' });
     }
 
-    // Create empty Yjs document state
+    // Create empty Yjs document state with initial HTML content
     const ydoc = new Y.Doc();
+    const yXmlFragment = ydoc.getXmlFragment('prosemirror');
+    
+    // If initial content provided, we could set it here
+    // For now, create empty document
+    
     const update = Y.encodeStateAsUpdate(ydoc);
     const buffer = Buffer.from(update);
+
+    // FIXED: Store as base64 string for consistency
+    const base64Content = buffer.toString('base64');
 
     const { data: document, error } = await supabase
       .from('documents')
       .insert([{
         workspace_id: workspaceId,
         title,
-        content: buffer,
+        content: base64Content, // Changed from buffer to base64
         created_by: req.userId,
         current_version: 1,
         created_at: new Date().toISOString(),

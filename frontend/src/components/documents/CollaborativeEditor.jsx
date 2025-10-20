@@ -55,6 +55,7 @@ const CollaborativeEditor = ({ documentId, workspaceId, documentTitle, onTitleCh
   const [fontSize, setFontSize] = useState('12');
   const [fontFamily, setFontFamily] = useState('Calibri');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [activeUsers, setActiveUsers] = useState([]);
 
   const editor = useEditor({
     extensions: [
@@ -97,13 +98,13 @@ const CollaborativeEditor = ({ documentId, workspaceId, documentTitle, onTitleCh
       const content = yText.toString();
       
       // Only update if content is different
-      const currentContent = editor.getText();
+      const currentContent = editor.getHTML();
       if (content !== currentContent) {
         const { from } = editor.state.selection;
         editor.commands.setContent(content, false);
         // Restore cursor position
         editor.commands.focus();
-        editor.commands.setTextSelection(Math.min(from, content.length));
+        editor.commands.setTextSelection(Math.min(from, editor.state.doc.content.size));
       }
       isUpdating = false;
     };
@@ -117,7 +118,7 @@ const CollaborativeEditor = ({ documentId, workspaceId, documentTitle, onTitleCh
       isUpdating = true;
       setIsSyncing(true);
       
-      const content = updatedEditor.getText();
+      const content = updatedEditor.getHTML ();
       const yjsContent = yText.toString();
       
       if (content !== yjsContent) {
@@ -138,6 +139,29 @@ const CollaborativeEditor = ({ documentId, workspaceId, documentTitle, onTitleCh
       editor.off('update', handleEditorUpdate);
     };
   }, [editor, ydoc]);
+
+
+  useEffect(() => {
+  if (!ydoc || !connected) return;
+
+  // Simple presence tracking
+  const awareness = {
+    user: {
+      name: `${user?.first_name} ${user?.last_name}`,
+      color: `#${Math.floor(Math.random()*16777215).toString(16)}`,
+      id: user?.id
+    }
+  };
+
+  // You can broadcast this through your existing socket
+  // For now, just show current user
+  setActiveUsers([awareness.user]);
+
+  return () => {
+    setActiveUsers([]);
+  };
+}, [ydoc, connected, user]);
+
 
   // Handle font family change for selected text
   const handleFontFamilyChange = (newFontFamily) => {
@@ -241,6 +265,28 @@ const CollaborativeEditor = ({ documentId, workspaceId, documentTitle, onTitleCh
               </span>
             )}
           </div>
+          {/* Active Users Indicator */}
+{activeUsers.length > 0 && (
+  <div className="flex flex-col border-l border-gray-300 pl-4">
+    <span className="text-xs text-gray-500 mb-1">Editing Now</span>
+    <div className="flex items-center space-x-2">
+      {activeUsers.map((u, i) => (
+        <div
+          key={u.id || i}
+          className="flex items-center space-x-1 bg-gray-100 rounded-full px-2 py-1"
+          title={u.name}
+        >
+          <div 
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: u.color }}
+          />
+          <span className="text-xs">{u.name}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
           <div className="flex items-center space-x-3">
             {isSyncing && <Loader2 className="w-3 h-3 animate-spin" />}
             <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`} />
