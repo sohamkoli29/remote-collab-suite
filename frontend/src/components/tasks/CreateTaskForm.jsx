@@ -15,8 +15,14 @@ const CreateTaskForm = ({ listId, lists = [], workspaceId, onSubmit, onCancel, c
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
 
+
+  console.log('🚀 CreateTaskForm mounted');
+console.log('📍 workspaceId prop:', workspaceId);
+console.log('📍 listId prop:', listId);
+console.log('📍 All props:', { workspaceId, listId, lists });
   // Fetch workspace members
   useEffect(() => {
+     console.log('⚡ useEffect triggered with workspaceId:', workspaceId);
     const fetchMembers = async () => {
       if (!workspaceId) {
         setLoadingMembers(false);
@@ -32,11 +38,7 @@ const CreateTaskForm = ({ listId, lists = [], workspaceId, onSubmit, onCancel, c
         console.log('🔍 Response.data:', response.data);
         
         // Try multiple possible paths where members might be
-        const workspaceMembers = response.data.workspace?.members || 
-                                 response.data.members || 
-                                 response.data.workspace?.users ||
-                                 response.data.users ||
-                                 [];
+        const workspaceMembers = response.data?.members || [];
         
         console.log('✅ Extracted workspace members:', workspaceMembers);
         console.log('📊 Members count:', workspaceMembers.length);
@@ -178,15 +180,12 @@ const CreateTaskForm = ({ listId, lists = [], workspaceId, onSubmit, onCancel, c
               </option>
               {members.map(member => {
                 // Handle different possible member data structures
-                const memberId = member.id || member.user_id;
-                const memberName = member.name || 
-                                  `${member.first_name || ''} ${member.last_name || ''}`.trim() ||
-                                  member.email ||
-                                  'Unknown User';
+                const memberId = member.id;
+                const memberName = `${member.first_name} ${member.last_name }`.trim();
                 
                 return (
                   <option key={memberId} value={memberId}>
-                    {memberName}
+                    {memberName}  {member.role === 'admin' ? '(Admin)' : ''}
                   </option>
                 );
               })}

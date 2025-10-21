@@ -249,6 +249,7 @@ const TaskBoard = ({ workspaceId }) => {
         <CreateTaskModal
           listId={showCreateTask}
           lists={safeLists}
+           workspaceId={workspaceId} 
           onClose={() => setShowCreateTask(null)}
           onCreate={createTask}
         />

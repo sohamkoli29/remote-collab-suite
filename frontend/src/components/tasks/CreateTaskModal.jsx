@@ -1,8 +1,11 @@
 
 import CreateTaskForm from './CreateTaskForm';
 
-const CreateTaskModal = ({ listId, lists , onClose, onCreate }) => {
-    const handleCreate = async (taskData) => {
+const CreateTaskModal = ({ listId, lists,workspaceId , onClose, onCreate }) => {
+    
+    console.log('🎯 CreateTaskModal received workspaceId:', workspaceId);
+
+  const handleCreate = async (taskData) => {
     console.log('🎯 CreateTaskModal: Creating task with:', { listId, taskData });
     
     // Make sure listId is passed correctly
@@ -39,6 +42,7 @@ const CreateTaskModal = ({ listId, lists , onClose, onCreate }) => {
           <CreateTaskForm
             listId={listId}
             lists={lists}
+            workspaceId={workspaceId}
             onSubmit={handleCreate}
             onCancel={onClose}
           />
