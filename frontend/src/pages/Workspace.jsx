@@ -1,4 +1,4 @@
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { workspaceAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,6 +13,12 @@ import CallNotification from '../components/video/CallNotification';
 import WhiteboardCanvas from '../components/whiteboard/WhiteboardCanvas';
 import FileUpload from '../components/files/FileUpload';
 import FileBrowser from '../components/files/FileBrowser';
+import { 
+  Loader2, MessageSquare, UserPlus, Video, Crown, Copy, 
+  CheckCircle2, ClipboardList, FileText, Palette, FolderOpen,
+  TrendingUp, Users, BarChart3, Settings, ArrowLeft, Sparkles,
+  Calendar, Shield, Bell, AlertTriangle, ChevronRight, Activity
+} from 'lucide-react';
 
 const Workspace = () => {
   const { workspaceId } = useParams();
@@ -30,26 +36,27 @@ const Workspace = () => {
   const [incomingCall, setIncomingCall] = useState(null);
   const [showWhiteboard, setShowWhiteboard] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchWorkspace();
   }, [workspaceId]);
   
   useEffect(() => {
-  const handleIncomingCall = (data) => {
-    setIncomingCall({
-      callerName: data.callerName,
-      callerAvatar: data.callerAvatar,
-      workspaceName: workspace?.name
-    });
-  };
+    const handleIncomingCall = (data) => {
+      setIncomingCall({
+        callerName: data.callerName,
+        callerAvatar: data.callerAvatar,
+        workspaceName: workspace?.name
+      });
+    };
 
-  socketService.on('incoming-call', handleIncomingCall);
+    socketService.on('incoming-call', handleIncomingCall);
 
-  return () => {
-    socketService.off('incoming-call', handleIncomingCall);
-  };
-}, [workspace]);
+    return () => {
+      socketService.off('incoming-call', handleIncomingCall);
+    };
+  }, [workspace]);
 
   const fetchWorkspace = async () => {
     try {
@@ -68,7 +75,7 @@ const Workspace = () => {
     try {
       await workspaceAPI.inviteUser(workspaceId, email, role);
       setShowInviteModal(false);
-      fetchWorkspace(); // Refresh data
+      fetchWorkspace();
     } catch (error) {
       console.error('Error inviting user:', error);
       throw error.response?.data?.error || 'Failed to invite user';
@@ -82,7 +89,7 @@ const Workspace = () => {
 
     try {
       await workspaceAPI.removeMember(workspaceId, userId);
-      fetchWorkspace(); // Refresh data
+      fetchWorkspace();
     } catch (error) {
       console.error('Error removing member:', error);
       alert(error.response?.data?.error || 'Failed to remove member');
@@ -92,7 +99,7 @@ const Workspace = () => {
   const handleUpdateRole = async (userId, newRole) => {
     try {
       await workspaceAPI.updateMemberRole(workspaceId, userId, newRole);
-      fetchWorkspace(); // Refresh data
+      fetchWorkspace();
     } catch (error) {
       console.error('Error updating role:', error);
       alert(error.response?.data?.error || 'Failed to update role');
@@ -100,701 +107,763 @@ const Workspace = () => {
   };
 
   const handleAcceptCall = () => {
-  setIncomingCall(null);
-  setShowVideoCall(true);
-};
+    setIncomingCall(null);
+    setShowVideoCall(true);
+  };
 
+  const handleDeclineCall = () => {
+    setIncomingCall(null);
+  };
 
-const handleDeclineCall = () => {
-  setIncomingCall(null);
-  // Optionally send decline notification to caller
-};
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(workspace.id);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -inset-[10px] opacity-50">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-float opacity-20"></div>
+            <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl animate-float opacity-20" style={{ animationDelay: '2s' }}></div>
+          </div>
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f1a_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f1a_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+        </div>
+
+        <div className="relative z-10 text-center space-y-6 animate-scale-in">
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-purple-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-neon animate-pulse-glow">
+            <Loader2 className="w-10 h-10 animate-spin text-white" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-2xl font-display font-bold text-white">Loading Workspace</h3>
+            <p className="text-gray-300">Setting up your collaborative environment...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !workspace) {
     return (
-      <div className="text-center py-12">
-        <div className="text-red-600 mb-4">{error}</div>
-        <button 
-          onClick={() => navigate('/')}
-          className="btn-primary"
-        >
-          Back to Dashboard
-        </button>
-      </div>
-    );
-  }
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center overflow-hidden p-4">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -inset-[10px] opacity-50">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-float opacity-20"></div>
+            <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl animate-float opacity-20" style={{ animationDelay: '2s' }}></div>
+          </div>
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f1a_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f1a_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+        </div>
 
-  if (!workspace) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-gray-600 mb-4">Workspace not found</div>
-        <button 
-          onClick={() => navigate('/')}
-          className="btn-primary"
-        >
-          Back to Dashboard
-        </button>
+        <div className="relative z-10 glass-panel backdrop-blur-2xl bg-white/10 border-white/20 max-w-md w-full text-center animate-scale-in">
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-red-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-neon mb-6">
+            <AlertTriangle className="w-10 h-10 text-white" />
+          </div>
+          <h3 className="text-2xl font-display font-bold text-white mb-3">
+            {error || 'Workspace Not Found'}
+          </h3>
+          <p className="text-gray-300 mb-8">
+            {error ? 'We encountered an error loading the workspace.' : 'This workspace does not exist or you don\'t have access.'}
+          </p>
+          <button 
+            onClick={() => navigate('/')}
+            className="group relative overflow-hidden bg-gradient-to-r from-purple-600 to-cyan-600 text-white px-8 py-3.5 rounded-xl font-semibold shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+          >
+            <span className="relative z-10 flex items-center justify-center space-x-2">
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back to Dashboard</span>
+            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+          </button>
+        </div>
       </div>
     );
   }
 
   const isAdmin = workspace.userRole === 'admin';
 
+  const tabs = [
+    { id: 'overview', icon: BarChart3, label: 'Overview' },
+    { id: 'documents', icon: FileText, label: 'Documents' },
+    { id: 'tasks', icon: ClipboardList, label: 'Tasks' },
+    { id: 'files', icon: FolderOpen, label: 'Files' },
+    { id: 'whiteboard', icon: Palette, label: 'Whiteboard' },
+    { id: 'chat', icon: MessageSquare, label: 'Chat' },
+    { id: 'members', icon: Users, label: 'Members' },
+    { id: 'settings', icon: Settings, label: 'Settings' },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Workspace Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{workspace.name}</h1>
-            {workspace.description && (
-              <p className="text-gray-600 mt-2">{workspace.description}</p>
-            )}
-          </div>
-          <div className="flex space-x-3">
-            <button
-              onClick={() => setShowChat(!showChat)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-                showChat 
-                  ? 'bg-primary-600 text-white' 
-                  : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-              }`}
-            >
-              {showChat ? 'Hide Chat' : 'Show Chat'}
-            </button>
-            {isAdmin && (
-              <button
-                onClick={() => setShowInviteModal(true)}
-                className="btn-primary"
-              >
-                Invite Members
-              </button>
-            )}
-            <button
-                onClick={() => setShowVideoCall(true)}
-                 className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 font-medium">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                 <span>Join Video Call</span>
-                </button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -inset-[10px] opacity-30">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-float opacity-20"></div>
+          <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl animate-float opacity-20" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-float opacity-20" style={{ animationDelay: '4s' }}></div>
         </div>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f1a_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f1a_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6">
         
-        <div className="flex items-center space-x-6 text-sm text-gray-500">
-          <span>{members.length} members</span>
-          <span>Created {new Date(workspace.created_at).toLocaleDateString()}</span>
-          <span className={`px-2 py-1 rounded-full text-xs ${
-            workspace.userRole === 'admin' 
-              ? 'bg-purple-100 text-purple-800' 
-              : 'bg-gray-100 text-gray-800'
-          }`}>
-            {workspace.userRole}
-          </span>
-        </div>
-      </div>
-
-      {/* Chat Panel */}
-      {showChat && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <ChatPanel workspaceId={workspaceId} isOpen={showChat} />
-        </div>
-      )}
-
-      {/* Navigation Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {['overview', 'documents', 'tasks','files','whiteboard', 'chat', 'members', 'settings'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setActiveTab(tab);
-                if (tab === 'chat' && !showChat) {
-                  setShowChat(true);
-                }
-              }}
-              className={`py-2 px-1 border-b-2 font-medium text-sm capitalize ${
-                activeTab === tab
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab === 'chat' ? `${tab} ${showChat ? '▲' : '▼'}` : tab}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      <div className="min-h-96">
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Quick Stats */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="card text-center">
-                  <div className="text-2xl font-bold text-primary-600">{members.length}</div>
-                  <div className="text-sm text-gray-600">Total Members</div>
+        {/* Workspace Header */}
+        <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 animate-slide-in-down">
+          <div className="flex flex-col gap-4 sm:gap-6">
+            {/* Top Row - Back Button & Title */}
+            <div className="flex items-start space-x-3 sm:space-x-4">
+              <button
+                onClick={() => navigate('/')}
+                className="p-2 sm:p-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200 flex-shrink-0"
+              >
+                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                  <h1 className="text-2xl sm:text-3xl font-display font-bold text-white truncate">{workspace.name}</h1>
+                  {isAdmin && (
+                    <div className="bg-gradient-to-r from-yellow-500/20 to-orange-600/20 text-yellow-300 border border-yellow-500/30 px-2 sm:px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 w-fit">
+                      <Crown className="w-3 h-3" />
+                      <span>Admin</span>
+                    </div>
+                  )}
                 </div>
-                <div className="card text-center">
-                  <div className="text-2xl font-bold text-green-600">0</div>
-                  <div className="text-sm text-gray-600">Active Tasks</div>
-                </div>
-                <div className="card text-center">
-                  <div className="text-2xl font-bold text-blue-600">0</div>
-                  <div className="text-sm text-gray-600">Documents</div>
+                {workspace.description && (
+                  <p className="text-gray-300 text-sm leading-relaxed line-clamp-2 sm:line-clamp-none">{workspace.description}</p>
+                )}
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-xs sm:text-sm text-gray-400">
+                  <span className="flex items-center space-x-1">
+                    <Users className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
+                    <span>{members.length} members</span>
+                  </span>
+                  <span className="hidden sm:flex items-center space-x-1">
+                    <Calendar className="w-4 h-4 text-purple-400" />
+                    <span>Created {new Date(workspace.created_at).toLocaleDateString()}</span>
+                  </span>
+                  <span className="flex items-center space-x-1">
+                    <Activity className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
+                    <span>Active</span>
+                  </span>
                 </div>
               </div>
-
-              {/* Quick Actions */}
-              <div className="card">
-                <h3 className="text-lg font-medium mb-4">Quick Actions</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button 
-                    onClick={() => setActiveTab('chat')}
-                    className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <button
+                onClick={() => setShowChat(!showChat)}
+                className={`group relative overflow-hidden px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold transition-all duration-300 ${
+                  showChat 
+                    ? 'bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-lg shadow-purple-500/30' 
+                    : 'bg-white/5 backdrop-blur-sm text-white border-2 border-white/10 hover:border-white/20 hover:bg-white/10'
+                }`}
+              >
+                <span className="relative z-10 flex items-center justify-center space-x-2">
+                  <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-sm sm:text-base">{showChat ? 'Hide Chat' : 'Show Chat'}</span>
+                </span>
+              </button>
+              
+              <div className="flex gap-2 sm:gap-3">
+                {isAdmin && (
+                  <button
+                    onClick={() => setShowInviteModal(true)}
+                    className="group relative overflow-hidden bg-white/5 backdrop-blur-sm text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold border-2 border-white/10 hover:border-purple-400/50 hover:bg-white/10 transition-all duration-300 flex-1 sm:flex-none"
                   >
-                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                      <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <div className="font-medium text-gray-900">Open Chat</div>
-                      <div className="text-sm text-gray-600">Communicate with your team</div>
-                    </div>
+                    <span className="relative z-10 flex items-center justify-center space-x-2">
+                      <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="text-sm sm:text-base">Invite</span>
+                    </span>
                   </button>
-                  
-                  <button 
-                    onClick={() => setActiveTab('tasks')}
-                    className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors"
-                  >
-                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                      <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <div className="font-medium text-gray-900">Task Board</div>
-                      <div className="text-sm text-gray-600">Manage team tasks</div>
-                    </div>
-                  </button>
-                  
-                  <button 
-                    onClick={() => setActiveTab('documents')}
-                    className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors"
-                  >
-                    <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                      <svg className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <div className="font-medium text-gray-900">Documents</div>
-                      <div className="text-sm text-gray-600">Collaborative editing</div>
-                    </div>
-                  </button>
-                  
-                <button 
-                   onClick={() => setShowWhiteboard(true)}
-                   className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
-                 >
-                   <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                     <svg className="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                     </svg>
-                   </div>
-                   <div className="text-left">
-                     <div className="font-medium text-gray-900">Whiteboard</div>
-                     <div className="text-sm text-gray-600">Start visual collaboration</div>
-                   </div>
-                 </button>
-                </div>
+                )}
+                
+                <button
+                  onClick={() => setShowVideoCall(true)}
+                  className="group relative overflow-hidden bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex-1 sm:flex-none"
+                >
+                  <span className="relative z-10 flex items-center justify-center space-x-2">
+                    <Video className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-sm sm:text-base">Join Call</span>
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                </button>
               </div>
+            </div>
+          </div>
+        </div>
 
-              {/* Recent Activity */}
-              <div className="card">
-                <h3 className="text-lg font-medium mb-4">Recent Activity</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                      <svg className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900">
-                        <span className="font-medium">You</span> created a new workspace
-                      </p>
-                      <p className="text-xs text-gray-500">{new Date(workspace.created_at).toLocaleDateString()}</p>
+        {/* Chat Panel (Floating) */}
+        {showChat && (
+          <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 animate-slide-in-up">
+            <ChatPanel workspaceId={workspaceId} isOpen={showChat} />
+          </div>
+        )}
+
+        {/* Navigation Tabs */}
+        <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 p-2 animate-fade-in overflow-x-auto">
+          <nav className="flex gap-2 min-w-max sm:min-w-0 sm:flex-wrap">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (tab.id === 'chat' && !showChat) {
+                      setShowChat(true);
+                    }
+                  }}
+                  className={`group relative px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium text-xs sm:text-sm whitespace-nowrap transition-all duration-300 ${
+                    activeTab === tab.id
+                      ? 'bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-lg shadow-purple-500/30'
+                      : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <span className="relative z-10 flex items-center space-x-2">
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden">{tab.label.slice(0, 4)}</span>
+                  </span>
+                  {activeTab === tab.id && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="min-h-96 animate-fade-in">
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Content */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 group text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-3 shadow-neon group-hover:scale-110 transition-transform duration-300">
+                        <Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-bold text-white mb-1">{members.length}</div>
+                      <div className="text-xs sm:text-sm text-gray-300">Total Members</div>
                     </div>
                   </div>
-                  
-                  {members.slice(0, 3).map((member, index) => (
-                    <div key={member.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                        <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                        </svg>
+
+                  <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 group text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-3 shadow-neon group-hover:scale-110 transition-transform duration-300">
+                        <CheckCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-900">
-                          <span className="font-medium">{member.first_name} {member.last_name}</span> joined the workspace
-                        </p>
-                        <p className="text-xs text-gray-500">{new Date(member.joinedAt).toLocaleDateString()}</p>
+                      <div className="text-2xl sm:text-3xl font-bold text-white mb-1">0</div>
+                      <div className="text-xs sm:text-sm text-gray-300">Active Tasks</div>
+                    </div>
+                  </div>
+
+                  <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 group text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center mb-3 shadow-neon group-hover:scale-110 transition-transform duration-300">
+                        <FileText className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-bold text-white mb-1">0</div>
+                      <div className="text-xs sm:text-sm text-gray-300">Documents</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20">
+                  <div className="flex items-center space-x-3 mb-4 sm:mb-6">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-display font-bold text-white">Quick Actions</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    {[
+                      { icon: MessageSquare, title: 'Open Chat', desc: 'Communicate with your team', gradient: 'from-blue-500 to-cyan-500', action: () => setActiveTab('chat') },
+                      { icon: ClipboardList, title: 'Task Board', desc: 'Manage team tasks', gradient: 'from-green-500 to-emerald-500', action: () => setActiveTab('tasks') },
+                      { icon: FileText, title: 'Documents', desc: 'Collaborative editing', gradient: 'from-purple-500 to-pink-500', action: () => setActiveTab('documents') },
+                      { icon: Palette, title: 'Whiteboard', desc: 'Visual collaboration', gradient: 'from-orange-500 to-red-500', action: () => setShowWhiteboard(true) },
+                    ].map((action, index) => (
+                      <button
+                        key={index}
+                        onClick={action.action}
+                        className="group flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 bg-white/5 backdrop-blur-sm border-2 border-white/10 rounded-xl hover:border-white/20 hover:bg-white/10 transition-all duration-300"
+                      >
+                        <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br ${action.gradient} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}>
+                          <action.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                        </div>
+                        <div className="text-left flex-1 min-w-0">
+                          <div className="font-semibold text-white group-hover:text-cyan-300 transition-colors text-sm sm:text-base truncate">{action.title}</div>
+                          <div className="text-xs sm:text-sm text-gray-400 truncate">{action.desc}</div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 flex-shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+ {/* Recent Activity */}
+<div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20">
+  <h3 className="text-lg sm:text-xl font-display font-bold text-white mb-4 sm:mb-6">Recent Activity</h3>
+  <div className="space-y-3">
+    <div className="flex items-center space-x-3 p-3 sm:p-4 bg-white/5 backdrop-blur-sm rounded-xl">
+      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center flex-shrink-0">
+        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-white">
+          <span className="font-semibold">You</span> created this workspace
+        </p>
+        <p className="text-xs text-gray-400">{new Date(workspace.created_at).toLocaleDateString()}</p>
+      </div>
+    </div>
+    
+    {members.slice(0, 3).map((member) => (
+      <div key={member.id} className="flex items-center space-x-3 p-3 sm:p-4 bg-white/5 backdrop-blur-sm rounded-xl">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+          <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-white truncate">
+            <span className="font-semibold">{member.first_name} {member.last_name}</span> joined the workspace
+          </p>
+          <p className="text-xs text-gray-400">{new Date(member.joinedAt).toLocaleDateString()}</p>
+        </div>
+      </div>
+    ))}
+    
+    {members.length === 0 && (
+      <div className="text-center py-8 sm:py-12">
+        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+        </div>
+        <p className="text-gray-300 font-medium mb-2 text-sm sm:text-base">No recent activity</p>
+        <p className="text-xs sm:text-sm text-gray-400">Invite members to get started!</p>
+      </div>
+    )}
+  </div>
+</div>
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-4 sm:space-y-6">
+                <MembersPanel 
+                  members={members} 
+                  currentUser={user}
+                  isAdmin={isAdmin}
+                  onRemoveMember={handleRemoveMember}
+                  onUpdateRole={handleUpdateRole}
+                />
+                
+                {/* Workspace Info */}
+                <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20">
+                  <h3 className="font-semibold text-white text-base sm:text-lg mb-4">Workspace Info</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-2">Workspace ID</label>
+                      <div className="flex items-center space-x-2">
+                        <code className="flex-1 text-xs bg-white/5 px-2 sm:px-3 py-2 rounded-lg font-mono text-gray-300 truncate">
+                          {workspace.id}
+                        </code>
+                        <button
+                          onClick={handleCopyId}
+                          className="p-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200 flex-shrink-0"
+                        >
+                          {copied ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                        </button>
                       </div>
                     </div>
-                  ))}
-                  
-                  {members.length === 0 && (
-                    <div className="text-center text-gray-500 py-8">
-                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="mt-2">No recent activity yet</p>
-                      <p className="text-sm mt-1">Invite members to get started!</p>
+                    
+                    <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-2">Created</label>
+                      <p className="text-sm text-white">
+                        {new Date(workspace.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
                     </div>
+                    
+                    <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-2">Your Role</label>
+                      <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${
+                        workspace.userRole === 'admin' 
+                          ? 'bg-gradient-to-r from-yellow-500/20 to-orange-600/20 text-yellow-300 border border-yellow-500/30' 
+                          : 'bg-white/10 text-gray-300 border border-white/20'
+                      }`}>
+                        {workspace.userRole === 'admin' && <Crown className="w-3 h-3" />}
+                        <span className="capitalize">{workspace.userRole}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'documents' && (
+            <div className="space-y-6">
+              <DocumentWorkspace workspaceId={workspaceId} />
+            </div>
+          )}
+
+          {activeTab === 'tasks' && (
+            <div className="space-y-6">
+              <TaskBoard workspaceId={workspaceId} />
+            </div>
+          )}
+
+          {activeTab === 'whiteboard' && (
+            <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-2xl font-display font-bold text-white mb-2">Collaborative Whiteboard</h3>
+                  <p className="text-sm text-gray-300">
+                    Draw, brainstorm, and collaborate in real-time
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowWhiteboard(true)}
+                  className="group relative overflow-hidden bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+                >
+                  <span className="relative z-10 flex items-center space-x-2">
+                    <Palette className="w-5 h-5" />
+                    <span>Open Whiteboard</span>
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                </button>
+              </div>
+              
+              {/* Whiteboard Preview */}
+              <div className="bg-white/5 backdrop-blur-sm rounded-2xl border-2 border-white/10 h-80 flex items-center justify-center mb-6">
+                <div className="text-center">
+                  <div className="w-20 h-20 mx-auto bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mb-4 shadow-neon">
+                    <Palette className="w-10 h-10 text-white" />
+                  </div>
+                  <p className="text-white font-semibold text-lg mb-2">Click "Open Whiteboard" to start collaborating</p>
+                  <p className="text-sm text-gray-400">Draw, sketch, and brainstorm with your team in real-time</p>
+                </div>
+              </div>
+
+              {/* Features */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { icon: Palette, title: 'Drawing Tools', desc: 'Pen, eraser, shapes, and more', gradient: 'from-purple-500 to-pink-500' },
+                  { icon: Users, title: 'Real-time Sync', desc: 'See others drawing live', gradient: 'from-cyan-500 to-blue-500' },
+                  { icon: TrendingUp, title: 'Export', desc: 'Save as PNG or JPG', gradient: 'from-green-500 to-emerald-500' },
+                ].map((feature, index) => (
+                  <div key={index} className="flex items-start space-x-3 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+                    <div className={`w-12 h-12 bg-gradient-to-br ${feature.gradient} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                      <feature.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white mb-1">{feature.title}</h4>
+                      <p className="text-sm text-gray-400">{feature.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'files' && (
+            <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-2xl font-display font-bold text-white mb-2">Workspace Files</h3>
+                  <p className="text-sm text-gray-300">
+                    Share and manage files with your team
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowFileUpload(!showFileUpload)}
+                  className={`group relative overflow-hidden px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                    showFileUpload
+                      ? 'bg-white/5 text-white border-2 border-white/10'
+                      : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/30'
+                  }`}
+                >
+                  <span className="relative z-10 flex items-center space-x-2">
+                    <FolderOpen className="w-5 h-5" />
+                    <span>{showFileUpload ? 'Cancel' : 'Upload File'}</span>
+                  </span>
+                  {!showFileUpload && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                  )}
+                </button>
+              </div>
+
+              {/* File Upload Section */}
+              {showFileUpload && (
+                <div className="mb-6 p-6 bg-white/5 backdrop-blur-sm rounded-2xl border-2 border-white/10 animate-scale-in">
+                  <FileUpload
+                    workspaceId={workspaceId}
+                    onUploadComplete={(file) => {
+                      setShowFileUpload(false);
+                      window.location.reload();
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* File Browser */}
+              <FileBrowser workspaceId={workspaceId} />
+            </div>
+          )}
+
+          {activeTab === 'chat' && (
+            <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20">
+              <ChatPanel workspaceId={workspaceId} isOpen={true} />
+            </div>
+          )}
+
+          {activeTab === 'members' && (
+            <div className="space-y-6">
+              <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-2xl font-display font-bold text-white mb-2">Workspace Members</h3>
+                    <p className="text-sm text-gray-300">
+                      Manage members and their permissions
+                    </p>
+                  </div>
+                  {isAdmin && (
+                    <button
+                      onClick={() => setShowInviteModal(true)}
+                      className="group relative overflow-hidden bg-gradient-to-r from-purple-600 to-cyan-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+                    >
+                      <span className="relative z-10 flex items-center space-x-2">
+                        <UserPlus className="w-5 h-5" />
+                        <span>Invite Members</span>
+                      </span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                    </button>
+                  )}
+                </div>
+                <MembersPanel 
+                  members={members} 
+                  currentUser={user}
+                  isAdmin={isAdmin}
+                  onRemoveMember={handleRemoveMember}
+                  onUpdateRole={handleUpdateRole}
+                  showActions={true}
+                />
+              </div>
+
+              {/* Membership Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  { value: members.length, label: 'Total Members', gradient: 'from-purple-500 to-pink-500', icon: Users },
+                  { value: members.filter(m => m.role === 'admin').length, label: 'Admins', gradient: 'from-yellow-500 to-orange-500', icon: Crown },
+                  { value: members.filter(m => m.role === 'member').length, label: 'Members', gradient: 'from-green-500 to-emerald-500', icon: CheckCircle2 },
+                ].map((stat, index) => (
+                  <div key={index} className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 text-center group hover:bg-white/15 transition-all duration-300">
+                    <div className={`w-14 h-14 mx-auto mb-3 bg-gradient-to-br ${stat.gradient} rounded-2xl flex items-center justify-center shadow-neon group-hover:scale-110 transition-transform duration-300`}>
+                      <stat.icon className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
+                    <div className="text-sm text-gray-300">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pending Invitations */}
+              <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20">
+                <h3 className="text-xl font-display font-bold text-white mb-4">Pending Invitations</h3>
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Bell className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-300 font-medium mb-2">No pending invitations</p>
+                  {isAdmin && (
+                    <button
+                      onClick={() => setShowInviteModal(true)}
+                      className="mt-2 text-sm text-cyan-400 hover:text-cyan-300 underline transition-colors"
+                    >
+                      Send your first invitation
+                    </button>
                   )}
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Members Sidebar */}
+          {activeTab === 'settings' && (
             <div className="space-y-6">
-              <MembersPanel 
-                members={members} 
-                currentUser={user}
-                isAdmin={isAdmin}
-                onRemoveMember={handleRemoveMember}
-                onUpdateRole={handleUpdateRole}
-              />
-              
-              {/* Workspace Info */}
-              <div className="card">
-                <h3 className="font-medium text-gray-900 mb-4">Workspace Information</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500">Workspace ID</label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono truncate flex-1">
-                        {workspace.id}
-                      </code>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(workspace.id)}
-                        className="text-xs text-primary-600 hover:text-primary-700"
-                      >
-                        Copy
+              <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20">
+                <h3 className="text-2xl font-display font-bold text-white mb-6">Workspace Settings</h3>
+                {isAdmin ? (
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-200">
+                        Workspace Name
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm border-2 border-white/10 rounded-xl text-white placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-purple-500/30 focus:border-purple-400/50 transition-all duration-300"
+                        defaultValue={workspace.name}
+                        disabled
+                      />
+                      <p className="text-sm text-gray-400">
+                        Workspace name cannot be changed yet. This feature is coming soon.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-200">
+                        Description
+                      </label>
+                      <textarea
+                        className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm border-2 border-white/10 rounded-xl text-white placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-purple-500/30 focus:border-purple-400/50 transition-all duration-300 resize-none"
+                        rows={3}
+                        defaultValue={workspace.description}
+                        disabled
+                      />
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-200">
+                        Workspace Visibility
+                      </label>
+                      <div className="space-y-2">
+                        <label className="flex items-center p-3 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 cursor-pointer">
+                          <input type="radio" name="visibility" className="mr-3" defaultChecked disabled />
+                          <div>
+                            <div className="text-sm text-white font-medium">Private</div>
+                            <div className="text-xs text-gray-400">Only invited members can join</div>
+                          </div>
+                        </label>
+                        <label className="flex items-center p-3 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 opacity-50 cursor-not-allowed">
+                          <input type="radio" name="visibility" className="mr-3" disabled />
+                          <div>
+                            <div className="text-sm text-white font-medium">Public</div>
+                            <div className="text-xs text-gray-400">Anyone with the link can join (Coming Soon)</div>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <div className="border-t border-white/10 pt-6">
+                      <button className="px-6 py-3 bg-white/5 backdrop-blur-sm text-white rounded-xl font-semibold border-2 border-white/10 opacity-50 cursor-not-allowed" disabled>
+                        Save Changes (Coming Soon)
                       </button>
                     </div>
                   </div>
-                  
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500">Created</label>
-                    <p className="text-sm text-gray-900 mt-1">
-                      {new Date(workspace.created_at).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 mx-auto bg-gradient-to-br from-red-500 to-orange-500 rounded-2xl flex items-center justify-center mb-6 shadow-neon">
+                      <Shield className="w-10 h-10 text-white" />
+                    </div>
+                    <h4 className="text-xl font-display font-bold text-white mb-3">Admin Access Required</h4>
+                    <p className="text-gray-300 mb-2">
+                      Only workspace admins can modify workspace settings.
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      Contact a workspace admin to make changes.
                     </p>
                   </div>
-                  
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500">Your Role</label>
-                    <span className={`inline-block mt-1 px-2 py-1 rounded-full text-xs ${
-                      workspace.userRole === 'admin' 
-                        ? 'bg-purple-100 text-purple-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {workspace.userRole}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'documents' && (
-          <div className="space-y-6">
-            <DocumentWorkspace workspaceId={workspaceId} />
-          </div>
-        )}
-
-        {activeTab === 'tasks' && (
-          <div className="space-y-6">
-            <TaskBoard workspaceId={workspaceId} />
-          </div>
-        )}
-
-
-      {activeTab === 'whiteboard' && (
-  <div className="space-y-6">
-    <div className="card">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h3 className="text-lg font-medium">Collaborative Whiteboard</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Draw, brainstorm, and collaborate in real-time
-          </p>
-        </div>
-        <button
-          onClick={() => setShowWhiteboard(true)}
-          className="btn-primary flex items-center space-x-2"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-          </svg>
-          <span>Open Whiteboard</span>
-        </button>
-      </div>
-      
-      {/* Whiteboard Preview */}
-      <div className="bg-gray-100 rounded-lg h-64 flex items-center justify-center">
-        <div className="text-center">
-          <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-          </svg>
-          <p className="text-gray-600 font-medium">Click "Open Whiteboard" to start collaborating</p>
-          <p className="text-sm text-gray-500 mt-2">Draw, sketch, and brainstorm with your team in real-time</p>
-        </div>
-      </div>
-
-      {/* Features */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        <div className="flex items-start space-x-3">
-          <div className="bg-purple-100 p-2 rounded-lg">
-            <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900">Drawing Tools</h4>
-            <p className="text-sm text-gray-600">Pen, eraser, shapes, and more</p>
-          </div>
-        </div>
-        
-        <div className="flex items-start space-x-3">
-          <div className="bg-blue-100 p-2 rounded-lg">
-            <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900">Real-time Sync</h4>
-            <p className="text-sm text-gray-600">See others drawing live</p>
-          </div>
-        </div>
-        
-        <div className="flex items-start space-x-3">
-          <div className="bg-green-100 p-2 rounded-lg">
-            <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900">Export</h4>
-            <p className="text-sm text-gray-600">Save as PNG or JPG</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
-{activeTab === 'files' && (
-  <div className="space-y-6">
-    <div className="card">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h3 className="text-lg font-medium">Workspace Files</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Share and manage files with your team
-          </p>
-        </div>
-        <button
-          onClick={() => setShowFileUpload(!showFileUpload)}
-          className="btn-primary flex items-center space-x-2"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-          </svg>
-          <span>{showFileUpload ? 'Cancel' : 'Upload File'}</span>
-        </button>
-      </div>
-
-      {/* File Upload Section */}
-      {showFileUpload && (
-        <div className="mb-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
-          <FileUpload
-            workspaceId={workspaceId}
-            onUploadComplete={(file) => {
-              setShowFileUpload(false);
-              // Refresh file list
-              window.location.reload(); // Simple refresh, or implement proper state update
-            }}
-          />
-        </div>
-      )}
-
-      {/* File Browser */}
-      <FileBrowser workspaceId={workspaceId} />
-    </div>
-  </div>
-)}
-
-
-
-
-        {activeTab === 'chat' && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <ChatPanel workspaceId={workspaceId} isOpen={true} />
-          </div>
-        )}
-
-        {activeTab === 'members' && (
-          <div className="space-y-6">
-            <div className="card">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h3 className="text-lg font-medium">Workspace Members</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Manage members and their permissions in this workspace
-                  </p>
-                </div>
-                {isAdmin && (
-                  <button
-                    onClick={() => setShowInviteModal(true)}
-                    className="btn-primary"
-                  >
-                    Invite Members
-                  </button>
                 )}
               </div>
-              <MembersPanel 
-                members={members} 
-                currentUser={user}
-                isAdmin={isAdmin}
-                onRemoveMember={handleRemoveMember}
-                onUpdateRole={handleUpdateRole}
-                showActions={true}
-              />
-            </div>
 
-            {/* Membership Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="card text-center">
-                <div className="text-2xl font-bold text-primary-600">{members.length}</div>
-                <div className="text-sm text-gray-600">Total Members</div>
-              </div>
-              <div className="card text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {members.filter(m => m.role === 'admin').length}
-                </div>
-                <div className="text-sm text-gray-600">Admins</div>
-              </div>
-              <div className="card text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {members.filter(m => m.role === 'member').length}
-                </div>
-                <div className="text-sm text-gray-600">Members</div>
-              </div>
-            </div>
-
-            {/* Invitation History (Placeholder) */}
-            <div className="card">
-              <h3 className="text-lg font-medium mb-4">Pending Invitations</h3>
-              <div className="text-center text-gray-500 py-8">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="mt-2">No pending invitations</p>
-                {isAdmin && (
-                  <button
-                    onClick={() => setShowInviteModal(true)}
-                    className="mt-2 text-sm text-primary-600 hover:text-primary-700 underline"
-                  >
-                    Send your first invitation
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div className="space-y-6">
-            <div className="card">
-              <h3 className="text-lg font-medium mb-4">Workspace Settings</h3>
-              {isAdmin ? (
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Workspace Name
-                    </label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      defaultValue={workspace.name}
-                      disabled
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      Workspace name cannot be changed yet. This feature is coming soon.
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      className="input-field"
-                      rows={3}
-                      defaultValue={workspace.description}
-                      disabled
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Workspace Visibility
-                    </label>
-                    <div className="space-y-2">
-                      <label className="flex items-center">
-                        <input type="radio" name="visibility" className="mr-2" defaultChecked disabled />
-                        <span className="text-sm text-gray-700">Private - Only invited members can join</span>
-                      </label>
-                      <label className="flex items-center opacity-50">
-                        <input type="radio" name="visibility" className="mr-2" disabled />
-                        <span className="text-sm text-gray-700">Public - Anyone with the link can join (Coming Soon)</span>
-                      </label>
+              {/* Danger Zone */}
+              {isAdmin && (
+                <div className="glass-panel backdrop-blur-2xl bg-red-500/10 border-red-500/30">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div>
+                      <h4 className="text-xl font-display font-bold text-red-300 mb-2">Danger Zone</h4>
+                      <p className="text-sm text-red-200">
+                        Permanent actions that cannot be undone
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        onClick={() => alert('This feature will be implemented later')}
+                        className="px-6 py-3 bg-white/5 backdrop-blur-sm text-red-300 rounded-xl font-semibold border-2 border-red-500/30 hover:border-red-500/50 hover:bg-white/10 transition-all duration-300"
+                      >
+                        Archive Workspace
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Are you absolutely sure? This will delete the workspace and all its data permanently.')) {
+                            alert('Workspace deletion will be implemented later');
+                          }
+                        }}
+                        className="group relative overflow-hidden bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+                      >
+                        <span className="relative z-10">Delete Workspace</span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                      </button>
                     </div>
                   </div>
-                  
-                  <div className="border-t border-gray-200 pt-4">
-                    <button className="btn-secondary" disabled>
-                      Save Changes (Coming Soon)
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  <h4 className="mt-4 text-lg font-medium text-gray-900">Admin Access Required</h4>
-                  <p className="mt-2 text-gray-600">
-                    Only workspace admins can modify workspace settings.
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Contact a workspace admin to make changes.
-                  </p>
                 </div>
               )}
-            </div>
 
-            {/* Danger Zone */}
-            {isAdmin && (
-              <div className="card border border-red-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-lg font-medium text-red-700">Danger Zone</h4>
-                    <p className="text-sm text-red-600 mt-1">
-                      Permanent actions that cannot be undone
-                    </p>
-                  </div>
-                  <div className="space-x-3">
-                    <button
-                      onClick={() => alert('This feature will be implemented later')}
-                      className="px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors"
-                    >
-                      Archive Workspace
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (window.confirm('Are you absolutely sure? This will delete the workspace and all its data permanently.')) {
-                          alert('Workspace deletion will be implemented later');
-                        }
-                      }}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                      Delete Workspace
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Your Preferences */}
-            <div className="card">
-              <h3 className="text-lg font-medium mb-4">Your Preferences</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Email Notifications</label>
-                    <p className="text-sm text-gray-500">Receive email updates for workspace activity</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Desktop Notifications</label>
-                    <p className="text-sm text-gray-500">Show browser notifications for new messages</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+              {/* User Preferences */}
+              <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20">
+                <h3 className="text-xl font-display font-bold text-white mb-6">Your Preferences</h3>
+                <div className="space-y-6">
+                  {[
+                    { title: 'Email Notifications', desc: 'Receive email updates for workspace activity' },
+                    { title: 'Desktop Notifications', desc: 'Show browser notifications for new messages' },
+                  ].map((pref, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+                      <div>
+                        <label className="block text-sm font-semibold text-white mb-1">{pref.title}</label>
+                        <p className="text-sm text-gray-400">{pref.desc}</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" defaultChecked />
+                        <div className="w-14 h-7 bg-white/10 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-500/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-600 peer-checked:to-cyan-600"></div>
+                      </label>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-          </div>
+          )}
+        </div>
+
+        {/* Modals */}
+        {showVideoCall && (
+          <VideoCallModal
+            workspaceId={workspaceId}
+            currentUser={user}
+            onClose={() => setShowVideoCall(false)}
+          />
+        )}
+        
+        {showWhiteboard && (
+          <WhiteboardCanvas
+            workspaceId={workspaceId}
+            currentUser={user}
+            onClose={() => setShowWhiteboard(false)}
+          />
+        )}
+        
+        {showInviteModal && (
+          <InviteModal
+            onClose={() => setShowInviteModal(false)}
+            onInvite={handleInviteUser}
+            existingMembers={members}
+          />
+        )}
+        
+        {incomingCall && (
+          <CallNotification
+            callerName={incomingCall.callerName}
+            callerAvatar={incomingCall.callerAvatar}
+            workspaceName={incomingCall.workspaceName}
+            onAccept={handleAcceptCall}
+            onDecline={handleDeclineCall}
+          />
         )}
       </div>
-        {showVideoCall && (
-  <VideoCallModal
-    workspaceId={workspaceId}
-    currentUser={user}
-    onClose={() => setShowVideoCall(false)}
-  />
-)}
-{showWhiteboard && (
-  <WhiteboardCanvas
-    workspaceId={workspaceId}
-    currentUser={user}
-    onClose={() => setShowWhiteboard(false)}
-  />
-)}
-      {/* Invite Modal */}
-      {showInviteModal && (
-        <InviteModal
-          onClose={() => setShowInviteModal(false)}
-          onInvite={handleInviteUser}
-          existingMembers={members}
-        />
-      )}
-      {incomingCall && (
-  <CallNotification
-    callerName={incomingCall.callerName}
-    callerAvatar={incomingCall.callerAvatar}
-    workspaceName={incomingCall.workspaceName}
-    onAccept={handleAcceptCall}
-    onDecline={handleDeclineCall}
-  />
-)}
     </div>
   );
 };
