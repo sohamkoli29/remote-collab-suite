@@ -189,7 +189,7 @@ const Workspace = () => {
     { id: 'tasks', icon: ClipboardList, label: 'Tasks' },
     { id: 'files', icon: FolderOpen, label: 'Files' },
     { id: 'whiteboard', icon: Palette, label: 'Whiteboard' },
-    { id: 'chat', icon: MessageSquare, label: 'Chat' },
+    
     { id: 'members', icon: Users, label: 'Members' },
     { id: 'settings', icon: Settings, label: 'Settings' },
   ];
@@ -383,7 +383,7 @@ const Workspace = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {[
-                      { icon: MessageSquare, title: 'Open Chat', desc: 'Communicate with your team', gradient: 'from-blue-500 to-cyan-500', action: () => setActiveTab('chat') },
+                      
                       { icon: ClipboardList, title: 'Task Board', desc: 'Manage team tasks', gradient: 'from-green-500 to-emerald-500', action: () => setActiveTab('tasks') },
                       { icon: FileText, title: 'Documents', desc: 'Collaborative editing', gradient: 'from-purple-500 to-pink-500', action: () => setActiveTab('documents') },
                       { icon: Palette, title: 'Whiteboard', desc: 'Visual collaboration', gradient: 'from-orange-500 to-red-500', action: () => setShowWhiteboard(true) },
@@ -617,11 +617,7 @@ const Workspace = () => {
             </div>
           )}
 
-          {activeTab === 'chat' && (
-            <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20">
-              <ChatPanel workspaceId={workspaceId} isOpen={true} />
-            </div>
-          )}
+         
 
           {activeTab === 'members' && (
             <div className="space-y-6">
