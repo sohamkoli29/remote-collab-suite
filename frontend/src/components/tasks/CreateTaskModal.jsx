@@ -1,14 +1,13 @@
-
 import CreateTaskForm from './CreateTaskForm';
+import { X, Plus } from 'lucide-react';
 
-const CreateTaskModal = ({ listId, lists,workspaceId , onClose, onCreate }) => {
+const CreateTaskModal = ({ listId, lists, workspaceId, onClose, onCreate }) => {
     
-    console.log('🎯 CreateTaskModal received workspaceId:', workspaceId);
+  console.log('🎯 CreateTaskModal received workspaceId:', workspaceId);
 
   const handleCreate = async (taskData) => {
     console.log('🎯 CreateTaskModal: Creating task with:', { listId, taskData });
     
-    // Make sure listId is passed correctly
     if (!listId) {
       console.error('❌ No listId provided to CreateTaskModal');
       return;
@@ -19,26 +18,36 @@ const CreateTaskModal = ({ listId, lists,workspaceId , onClose, onCreate }) => {
       onClose();
     } catch (error) {
       console.error('❌ Error in CreateTaskModal:', error);
-      // Error is handled by CreateTaskForm
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-hidden">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Create New Task</h3>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div 
+        className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-white/10">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-neon">
+              <Plus className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-display font-bold text-white">Create New Task</h3>
+              <p className="text-sm text-gray-400">Add a task to your list</p>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-200"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] custom-scrollbar">
           <CreateTaskForm
             listId={listId}
             lists={lists}
@@ -48,6 +57,12 @@ const CreateTaskModal = ({ listId, lists,workspaceId , onClose, onCreate }) => {
           />
         </div>
       </div>
+
+      {/* Click outside to close */}
+      <div 
+        className="absolute inset-0 -z-10" 
+        onClick={onClose}
+      />
     </div>
   );
 };

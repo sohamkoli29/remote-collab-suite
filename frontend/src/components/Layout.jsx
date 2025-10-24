@@ -82,16 +82,23 @@ const Layout = ({ children }) => {
             {/* Logo & Brand */}
             <div className="flex items-center space-x-4 sm:space-x-8">
               <Link to="/" className="flex items-center space-x-2 sm:space-x-3 group">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-neon group-hover:shadow-neon-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
-                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <div className="hidden sm:block">
-                  <h1 className="text-xl sm:text-2xl font-display font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-                    CollabSuite
-                  </h1>
-                  <p className="text-xs text-gray-400 -mt-1">Remote Work Platform</p>
-                </div>
-              </Link>
+    {/* Logo Container */}
+    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center shadow-neon group-hover:shadow-neon-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 overflow-hidden">
+      <img
+        src="/Logo.png"
+        alt="KaaryaSetu Logo"
+        className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+      />
+    </div>
+
+    {/* Text Section */}
+    <div className="hidden sm:block">
+      <h1 className="text-xl sm:text-2xl font-display font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+        KaaryaSetu
+      </h1>
+      <p className="text-xs text-gray-400 -mt-1">Remote Work Platform</p>
+    </div>
+  </Link>
               
               {/* Desktop Navigation */}
               <div className="hidden md:flex md:space-x-2">

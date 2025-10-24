@@ -2,6 +2,7 @@ import React from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import TaskCard from './TaskCard';
 import CreateTaskForm from './CreateTaskForm';
+import { GripVertical, Edit2, Trash2, Plus, ClipboardList } from 'lucide-react';
 
 const TaskList = ({ 
   list, 
@@ -15,7 +16,6 @@ const TaskList = ({
 }) => {
   const [showCreateTask, setShowCreateTask] = React.useState(false);
 
-  // Ensure list.tasks is always an array
   const tasks = Array.isArray(list?.tasks) ? list.tasks : [];
 
   const handleSubmit = (name) => {
@@ -41,8 +41,8 @@ const TaskList = ({
 
   if (!list) {
     return (
-      <div className="bg-gray-50 rounded-lg p-4 h-fit">
-        <div className="text-center text-gray-500 py-8">
+      <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 h-fit p-6">
+        <div className="text-center text-gray-400 py-8">
           <p>List not available</p>
         </div>
       </div>
@@ -50,9 +50,9 @@ const TaskList = ({
   }
 
   return (
-    <div className="bg-gray-50 rounded-lg p-4 h-fit max-h-full overflow-hidden flex flex-col">
+    <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 h-fit max-h-full overflow-hidden flex flex-col hover:bg-white/15 transition-all duration-300">
       {/* List Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
         {isEditing ? (
           <form 
             onSubmit={(e) => {
@@ -66,7 +66,7 @@ const TaskList = ({
               type="text"
               name="name"
               defaultValue={list.name}
-              className="w-full px-2 py-1 text-sm font-medium bg-white border rounded"
+              className="w-full px-3 py-2 text-sm font-semibold bg-white/10 border-2 border-purple-500/50 rounded-lg text-white placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-purple-500/30 focus:border-purple-400/50 transition-all duration-300"
               autoFocus
               onBlur={handleCancel}
             />
@@ -75,31 +75,28 @@ const TaskList = ({
           <>
             <div 
               {...dragHandleProps}
-              className="flex-1 flex items-center space-x-2 cursor-grab active:cursor-grabbing"
+              className="flex-1 flex items-center space-x-2 cursor-grab active:cursor-grabbing group"
             >
-              <h3 className="font-medium text-gray-900 text-sm">{list.name}</h3>
-              <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">
+              <GripVertical className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors flex-shrink-0" />
+              <h3 className="font-semibold text-white text-sm sm:text-base truncate">{list.name}</h3>
+              <span className="bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-cyan-300 text-xs px-2 py-1 rounded-full border border-purple-500/30 flex-shrink-0">
                 {tasks.length}
               </span>
             </div>
             <div className="flex space-x-1">
               <button
                 onClick={onEditStart}
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-200"
                 title="Edit list name"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
+                <Edit2 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(list.id)}
-                className="text-gray-400 hover:text-red-600 p-1"
+                className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
                 title="Delete list"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           </>
@@ -112,8 +109,8 @@ const TaskList = ({
           <div
             {...provided.droppableProps}
             ref={provided.innerRef}
-            className={`flex-1 overflow-y-auto space-y-2 min-h-20 ${
-              snapshot.isDraggingOver ? 'bg-blue-50 rounded' : ''
+            className={`flex-1 overflow-y-auto space-y-2 min-h-20 py-2 transition-all duration-300 rounded-lg ${
+              snapshot.isDraggingOver ? 'bg-purple-500/10 ring-2 ring-purple-500/30' : ''
             }`}
             style={{ maxHeight: 'calc(100vh - 300px)' }}
           >
@@ -124,8 +121,8 @@ const TaskList = ({
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
-                    className={`transform transition-transform ${
-                      snapshot.isDragging ? 'rotate-5 shadow-lg' : ''
+                    className={`transform transition-all duration-300 ${
+                      snapshot.isDragging ? 'rotate-2 scale-105 opacity-80' : ''
                     }`}
                   >
                     <TaskCard task={task} listId={list.id} />
@@ -138,10 +135,11 @@ const TaskList = ({
             {/* Empty state */}
             {tasks.length === 0 && !showCreateTask && (
               <div className="text-center py-8 text-gray-400">
-                <svg className="mx-auto h-8 w-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v11a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
+                <div className="w-12 h-12 mx-auto bg-white/5 rounded-xl flex items-center justify-center mb-3">
+                  <ClipboardList className="w-6 h-6 text-gray-400" />
+                </div>
                 <p className="text-sm">No tasks yet</p>
+                <p className="text-xs text-gray-500 mt-1">Add your first task below</p>
               </div>
             )}
           </div>
@@ -152,20 +150,20 @@ const TaskList = ({
       {!showCreateTask ? (
         <button
           onClick={handleAddTask}
-          className="mt-3 w-full flex items-center space-x-2 text-gray-500 hover:text-gray-700 text-sm py-2 px-3 rounded hover:bg-gray-200 transition-colors"
+          className="mt-3 w-full flex items-center justify-center space-x-2 text-gray-300 hover:text-white text-sm py-2.5 px-3 rounded-lg hover:bg-white/10 transition-all duration-200 border-2 border-dashed border-white/20 hover:border-purple-400/50 group"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Add a task</span>
+          <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+          <span className="font-medium">Add a task</span>
         </button>
       ) : (
-        <CreateTaskForm
-          listId={list.id}
-          onSubmit={handleCreateTask}
-          onCancel={handleCancelCreateTask}
-          compact={true}
-        />
+        <div className="mt-3 animate-scale-in">
+          <CreateTaskForm
+            listId={list.id}
+            onSubmit={handleCreateTask}
+            onCancel={handleCancelCreateTask}
+            compact={true}
+          />
+        </div>
       )}
     </div>
   );

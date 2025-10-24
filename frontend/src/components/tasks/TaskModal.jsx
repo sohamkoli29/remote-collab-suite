@@ -1,5 +1,10 @@
-import  { useState } from 'react';
+import { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { 
+  X, Edit2, Trash2, Save, Calendar, Flag, User, Clock, 
+  Loader2, CheckCircle2 
+} from 'lucide-react';
 
 const TaskModal = ({ task, listId, onClose, onUpdate, onDelete }) => {
   const { user: currentUser } = useAuth();
@@ -55,10 +60,9 @@ const TaskModal = ({ task, listId, onClose, onUpdate, onDelete }) => {
   const formatDate = (dateString) => {
     if (!dateString) return 'No due date';
     return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
     });
   };
 
@@ -67,203 +71,277 @@ const TaskModal = ({ task, listId, onClose, onUpdate, onDelete }) => {
     return new Date(dueDate) < new Date().setHours(0, 0, 0, 0);
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Task Details</h3>
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'urgent': return 'from-red-500/20 to-rose-500/20 text-red-300 border-red-500/30';
+      case 'high': return 'from-orange-500/20 to-amber-500/20 text-orange-300 border-orange-500/30';
+      case 'medium': return 'from-yellow-500/20 to-yellow-600/20 text-yellow-300 border-yellow-500/30';
+      case 'low': return 'from-green-500/20 to-emerald-500/20 text-green-300 border-green-500/30';
+      default: return 'from-gray-500/20 to-gray-600/20 text-gray-300 border-gray-500/30';
+    }
+  };
+
+  // ✅ MODAL CONTENT (kept same, fixed padding/alignment)
+  const modalContent = (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 sm:p-6 md:p-8"
+      onClick={onClose}
+    >
+      <div
+        className="relative flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-2xl 
+                   border border-white/10 bg-white/10 backdrop-blur-2xl shadow-2xl animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 
+                        bg-white/10 px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl 
+                            bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md">
+              <CheckCircle2 className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white leading-tight">Task Details</h3>
+              <p className="text-sm text-gray-400 leading-tight">View and edit task info</p>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-400 
+                       transition-all duration-200 hover:bg-white/10 hover:text-white"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {isEditing ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title *
-                </label>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Title */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-white">Title *</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="input-field"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white 
+                             placeholder-gray-400 focus:border-blue-400 focus:ring-4 
+                             focus:ring-blue-500/30 transition-all"
+                  placeholder="Enter task title"
                   required
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
+              {/* Description */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-white">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   rows={4}
-                  className="input-field"
+                  className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 
+                             text-white placeholder-gray-400 focus:border-blue-400 focus:ring-4 
+                             focus:ring-blue-500/30 transition-all"
+                  placeholder="Add more details..."
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Priority
+              {/* Priority & Due Date */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-white">
+                    <Flag className="h-4 w-4 text-orange-400" /> Priority
                   </label>
                   <select
                     value={formData.priority}
                     onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
-                    className="input-field"
+                    className="w-full cursor-pointer rounded-xl border border-white/10 bg-white/5 
+                               px-4 py-3 text-white focus:border-blue-400 focus:ring-4 
+                               focus:ring-blue-500/30 transition-all"
                   >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
+                    <option value="low" className="bg-slate-800">Low</option>
+                    <option value="medium" className="bg-slate-800">Medium</option>
+                    <option value="high" className="bg-slate-800">High</option>
+                    <option value="urgent" className="bg-slate-800">Urgent</option>
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Due Date
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-white">
+                    <Calendar className="h-4 w-4 text-purple-400" /> Due Date
                   </label>
                   <input
                     type="date"
                     value={formData.dueDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-                    className="input-field"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white 
+                               focus:border-blue-400 focus:ring-4 focus:ring-blue-500/30 transition-all"
                   />
                 </div>
               </div>
-
-              <div className="flex space-x-3">
-                <button
-                  type="submit"
-                  disabled={!formData.title.trim() || isSubmitting}
-                  className="btn-primary flex-1 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setFormData({
-                      title: task.title,
-                      description: task.description || '',
-                      assigneeId: task.assignee_id || '',
-                      dueDate: task.due_date ? task.due_date.split('T')[0] : '',
-                      priority: task.priority || 'medium'
-                    });
-                  }}
-                  className="btn-secondary"
-                >
-                  Cancel
-                </button>
-              </div>
             </form>
           ) : (
-            <div className="space-y-6">
-              {/* Task Header */}
-              <div>
-                <h4 className="text-xl font-semibold text-gray-900 mb-2">{task.title}</h4>
+            <div className="space-y-8">
+              {/* Title & Description */}
+              <div className="space-y-3">
+                <h4 className="text-2xl font-bold text-white leading-tight">{task.title}</h4>
                 {task.description && (
-                  <p className="text-gray-600 whitespace-pre-wrap">{task.description}</p>
+                  <p className="text-base text-gray-300 leading-relaxed whitespace-pre-wrap">
+                    {task.description}
+                  </p>
                 )}
               </div>
 
-              {/* Task Meta */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium text-gray-700">Status:</span>
-                  <div className="mt-1 bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs inline-block">
-                    In List
+              {/* Info Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Priority */}
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <Flag className="h-4 w-4" /> Priority
+                  </div>
+                  <div className={`inline-flex items-center px-3 py-2 rounded-lg border 
+                                  bg-gradient-to-r ${getPriorityColor(task.priority)} 
+                                  text-sm font-medium`}>
+                    {task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1)}
                   </div>
                 </div>
 
-                <div>
-                  <span className="font-medium text-gray-700">Priority:</span>
-                  <div className={`mt-1 px-2 py-1 rounded text-xs inline-block ${
-                    task.priority === 'urgent' ? 'bg-red-100 text-red-800' :
-                    task.priority === 'high' ? 'bg-orange-100 text-orange-800' :
-                    task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
-                    {task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1) || 'Medium'}
+                {/* Due Date */}
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <Calendar className="h-4 w-4" /> Due Date
                   </div>
-                </div>
-
-                <div>
-                  <span className="font-medium text-gray-700">Due Date:</span>
-                  <div className={`mt-1 px-2 py-1 rounded text-xs inline-block ${
-                    isOverdue(task.due_date) ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                  <div className={`inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium ${
+                    isOverdue(task.due_date)
+                      ? 'bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 border border-red-500/30'
+                      : 'bg-white/10 text-gray-300 border border-white/20'
                   }`}>
                     {formatDate(task.due_date)}
                   </div>
                 </div>
 
-                <div>
-                  <span className="font-medium text-gray-700">Assignee:</span>
-                  <div className="mt-1 flex items-center space-x-2">
-                    {task.assignee ? (
-                      <>
-                        {task.assignee.avatar_url ? (
-                          <img
-                            src={task.assignee.avatar_url}
-                            alt={task.assignee.first_name}
-                            className="w-6 h-6 rounded-full"
-                          />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-xs font-medium text-blue-600">
-                              {getInitials(task.assignee.first_name, task.assignee.last_name)}
-                            </span>
-                          </div>
-                        )}
-                        <span>{task.assignee.first_name} {task.assignee.last_name}</span>
-                      </>
-                    ) : (
-                      <span className="text-gray-400">Unassigned</span>
-                    )}
+                {/* Assignee */}
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <User className="h-4 w-4" /> Assignee
                   </div>
+                  {task.assignee ? (
+                    <div className="flex items-center gap-3">
+                      {task.assignee.avatar_url ? (
+                        <img
+                          src={task.assignee.avatar_url}
+                          alt={task.assignee.first_name}
+                          className="h-8 w-8 rounded-lg object-cover ring-2 ring-purple-500/30"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500 
+                                        flex items-center justify-center">
+                          <span className="text-xs font-bold text-white">
+                            {getInitials(task.assignee.first_name, task.assignee.last_name)}
+                          </span>
+                        </div>
+                      )}
+                      <span className="text-sm font-medium text-white truncate">
+                        {task.assignee.first_name} {task.assignee.last_name}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-400">Unassigned</span>
+                  )}
                 </div>
-              </div>
 
-              {/* Task Activity */}
-              <div>
-                <h5 className="font-medium text-gray-700 mb-2">Activity</h5>
-                <div className="text-sm text-gray-500">
-                  Created by {task.creator?.first_name} {task.creator?.last_name} on{' '}
-                  {new Date(task.created_at).toLocaleDateString()}
+                {/* Created */}
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <Clock className="h-4 w-4" /> Created
+                  </div>
+                  <div className="text-sm text-white font-medium">
+                    {new Date(task.created_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </div>
+                  {task.creator && (
+                    <div className="text-xs text-gray-400 truncate">
+                      by {task.creator.first_name} {task.creator.last_name}
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="btn-primary"
-                >
-                  Edit Task
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={isSubmitting}
-                  className="btn-secondary text-red-600 border-red-200 hover:bg-red-50 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Deleting...' : 'Delete Task'}
-                </button>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 z-10 flex flex-col sm:flex-row gap-3 border-t border-white/10 
+                        bg-white/10 px-6 py-4">
+          {isEditing ? (
+            <>
+              <button
+                onClick={handleSubmit}
+                disabled={!formData.title.trim() || isSubmitting}
+                className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-3.5 
+                           text-white font-semibold shadow-lg transition-all hover:scale-[1.02] 
+                           active:scale-[0.98] disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin" /> Saving...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <Save className="h-5 w-5" /> Save Changes
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-6 py-3.5 text-white 
+                           font-semibold hover:bg-white/10 transition-all"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-3.5 
+                           text-white font-semibold shadow-lg transition-all hover:scale-[1.02] 
+                           active:scale-[0.98]"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <Edit2 className="h-5 w-5" /> Edit Task
+                </span>
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isSubmitting}
+                className="flex-1 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 px-6 py-3.5 
+                           text-white font-semibold shadow-lg transition-all hover:scale-[1.02] 
+                           active:scale-[0.98] disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin" /> Deleting...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <Trash2 className="h-5 w-5" /> Delete
+                  </span>
+                )}
+              </button>
+            </>
           )}
         </div>
       </div>
     </div>
   );
+
+  // ✅ FIX: Render Modal via Portal to avoid clipping/misalignment
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 export default TaskModal;
