@@ -1,4 +1,10 @@
-import  { useState } from 'react';
+import { useState } from 'react';
+import { 
+  PenTool, Eraser, Square, Circle, 
+  Palette, Undo2, Redo2, Trash2, 
+  Download, Minus, ChevronDown,
+  MousePointer, Type, Hand // Added Hand import
+} from 'lucide-react';
 
 const WhiteboardToolbar = ({
   tool,
@@ -17,16 +23,18 @@ const WhiteboardToolbar = ({
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   const tools = [
-    { id: 'pen', name: 'Pen', icon: '✏️' },
-    { id: 'eraser', name: 'Eraser', icon: '🧹' },
-    { id: 'rectangle', name: 'Rectangle', icon: '⬜' },
-    { id: 'circle', name: 'Circle', icon: '⭕' },
+    { id: 'pen', name: 'Pen', icon: PenTool, shortcut: 'P' },
+    { id: 'eraser', name: 'Eraser', icon: Eraser, shortcut: 'E' },
+    { id: 'rectangle', name: 'Rectangle', icon: Square, shortcut: 'R' },
+    { id: 'circle', name: 'Circle', icon: Circle, shortcut: 'C' },
+    { id: 'select', name: 'Select', icon: MousePointer, shortcut: 'V' },
+    { id: 'hand', name: 'Hand', icon: Hand, shortcut: 'H' }, // Added Hand tool
   ];
 
   const colors = [
-    '#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF',
-    '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080',
-    '#FFC0CB', '#A52A2A', '#808080', '#C0C0C0'
+    '#000000', '#FFFFFF', '#EF4444', '#10B981', '#3B82F6',
+    '#F59E0B', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899',
+    '#84CC16', '#6366F1', '#14B8A6', '#F43F5E'
   ];
 
   const strokeWidths = [1, 2, 3, 5, 8, 12];
@@ -42,52 +50,69 @@ const WhiteboardToolbar = ({
     onExport(format);
   };
 
+  const ToolbarButton = ({ onClick, isActive, children, title, disabled, shortcut }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={`${title} (${shortcut})`}
+      className={`relative p-2 sm:p-3 rounded-lg transition-all duration-200 ${
+        isActive 
+          ? 'bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-cyan-300 border border-purple-500/30 shadow-lg' 
+          : 'text-gray-300 hover:text-white hover:bg-white/10 border border-transparent'
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+    >
+      {children}
+      <span className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        {shortcut}
+      </span>
+    </button>
+  );
+
   return (
-    <div className="bg-white border-b border-gray-200 px-6 py-3">
-      <div className="flex items-center justify-between">
+    <div className="glass-panel backdrop-blur-2xl bg-white/10 border-b border-white/10 px-3 sm:px-6 py-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
         {/* Left Section - Drawing Tools */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
           {/* Tool Selector */}
-          <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-            {tools.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => onToolChange(t.id)}
-                className={`px-3 py-2 rounded-md font-medium text-sm transition-colors ${
-                  tool === t.id
-                    ? 'bg-purple-600 text-white shadow-sm'
-                    : 'text-gray-700 hover:bg-gray-200'
-                }`}
-                title={t.name}
-              >
-                <span className="text-lg">{t.icon}</span>
-              </button>
-            ))}
+          <div className="flex items-center gap-1 bg-white/5 backdrop-blur-sm rounded-lg p-1 border border-white/10">
+            {tools.map((t) => {
+              const Icon = t.icon;
+              return (
+                <ToolbarButton
+                  key={t.id}
+                  onClick={() => onToolChange(t.id)}
+                  isActive={tool === t.id}
+                  title={t.name}
+                  shortcut={t.shortcut}
+                >
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                </ToolbarButton>
+              );
+            })}
           </div>
 
           {/* Divider */}
-          <div className="h-8 w-px bg-gray-300"></div>
+          <div className="h-6 w-px bg-white/10 mx-1 hidden sm:block"></div>
 
           {/* Color Picker */}
           <div className="relative">
             <button
               onClick={() => setShowColorPicker(!showColorPicker)}
-              className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="flex items-center gap-2 p-2 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 hover:border-purple-400/50 hover:bg-white/10 transition-all duration-300 group"
               title="Choose color"
             >
               <div
-                className="w-6 h-6 rounded border-2 border-gray-300"
+                className="w-5 h-5 sm:w-6 sm:h-6 rounded border-2 border-white/20 shadow-sm"
                 style={{ backgroundColor: color }}
               ></div>
-              <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              <Palette className="w-4 h-4 text-gray-300 group-hover:text-white" />
+              <ChevronDown className="w-3 h-3 text-gray-400" />
             </button>
 
             {/* Color Palette Dropdown */}
             {showColorPicker && (
-              <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-10">
-                <div className="grid grid-cols-7 gap-2 mb-3">
+              <div className="absolute top-full left-0 mt-2 glass-panel backdrop-blur-2xl bg-white/10 border-white/20 rounded-xl shadow-2xl p-3 sm:p-4 z-10 min-w-[200px]">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-3">
                   {colors.map((c) => (
                     <button
                       key={c}
@@ -95,8 +120,8 @@ const WhiteboardToolbar = ({
                         onColorChange(c);
                         setShowColorPicker(false);
                       }}
-                      className={`w-8 h-8 rounded border-2 transition-all hover:scale-110 ${
-                        color === c ? 'border-purple-600 ring-2 ring-purple-300' : 'border-gray-300'
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded border-2 transition-all hover:scale-110 ${
+                        color === c ? 'border-cyan-400 ring-2 ring-cyan-300/50' : 'border-white/20'
                       }`}
                       style={{ backgroundColor: c }}
                       title={c}
@@ -105,13 +130,13 @@ const WhiteboardToolbar = ({
                 </div>
                 
                 {/* Custom Color Input */}
-                <div className="flex items-center space-x-2 pt-2 border-t border-gray-200">
-                  <label className="text-xs text-gray-600 font-medium">Custom:</label>
+                <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                  <label className="text-xs text-gray-300 font-medium">Custom:</label>
                   <input
                     type="color"
                     value={color}
                     onChange={(e) => onColorChange(e.target.value)}
-                    className="w-16 h-8 border border-gray-300 rounded cursor-pointer"
+                    className="w-12 h-8 border border-white/20 rounded-lg cursor-pointer bg-white/5"
                   />
                 </div>
               </div>
@@ -119,23 +144,23 @@ const WhiteboardToolbar = ({
           </div>
 
           {/* Stroke Width Selector */}
-          <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-white/5 backdrop-blur-sm rounded-lg p-1 border border-white/10">
             {strokeWidths.map((width) => (
               <button
                 key={width}
                 onClick={() => onStrokeWidthChange(width)}
-                className={`px-3 py-2 rounded-md transition-colors ${
+                className={`p-2 rounded transition-all duration-200 ${
                   strokeWidth === width
-                    ? 'bg-purple-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-200'
+                    ? 'bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-cyan-300'
+                    : 'text-gray-300 hover:text-white hover:bg-white/10'
                 }`}
                 title={`${width}px`}
               >
                 <div
-                  className="rounded-full bg-current"
+                  className="rounded-full bg-current transition-all"
                   style={{
-                    width: `${Math.min(width * 2, 16)}px`,
-                    height: `${Math.min(width * 2, 16)}px`
+                    width: `${Math.min(width * 1.5, 12)}px`,
+                    height: `${Math.min(width * 1.5, 12)}px`
                   }}
                 />
               </button>
@@ -144,78 +169,85 @@ const WhiteboardToolbar = ({
         </div>
 
         {/* Right Section - Actions */}
-        <div className="flex items-center space-x-2">
-          {/* Undo */}
-          <button
-            onClick={onUndo}
-            disabled={!canUndo}
-            className={`p-2 rounded-lg transition-colors ${
-              canUndo
-                ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                : 'bg-gray-50 text-gray-300 cursor-not-allowed'
-            }`}
-            title="Undo (Ctrl+Z)"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-            </svg>
-          </button>
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Undo/Redo */}
+          <div className="flex items-center gap-1 bg-white/5 backdrop-blur-sm rounded-lg p-1 border border-white/10">
+            <button
+              onClick={onUndo}
+              disabled={!canUndo}
+              className={`p-2 rounded transition-all duration-200 ${
+                canUndo
+                  ? 'text-gray-300 hover:text-white hover:bg-white/10'
+                  : 'text-gray-500 cursor-not-allowed'
+              }`}
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
 
-          {/* Redo */}
-          <button
-            onClick={onRedo}
-            disabled={!canRedo}
-            className={`p-2 rounded-lg transition-colors ${
-              canRedo
-                ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                : 'bg-gray-50 text-gray-300 cursor-not-allowed'
-            }`}
-            title="Redo (Ctrl+Y)"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6" />
-            </svg>
-          </button>
+            <button
+              onClick={onRedo}
+              disabled={!canRedo}
+              className={`p-2 rounded transition-all duration-200 ${
+                canRedo
+                  ? 'text-gray-300 hover:text-white hover:bg-white/10'
+                  : 'text-gray-500 cursor-not-allowed'
+              }`}
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          </div>
 
           {/* Divider */}
-          <div className="h-8 w-px bg-gray-300"></div>
+          <div className="h-6 w-px bg-white/10 mx-1 hidden sm:block"></div>
 
-          {/* Clear */}
-          <button
-            onClick={handleClearWithConfirm}
-            className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium text-sm transition-colors flex items-center space-x-1"
-            title="Clear whiteboard"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            <span>Clear</span>
-          </button>
+          {/* Clear & Export */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleClearWithConfirm}
+              className="group relative overflow-hidden bg-red-500/10 backdrop-blur-sm text-red-300 px-3 py-2 rounded-lg font-medium border-2 border-red-500/20 hover:border-red-500/50 hover:bg-red-500/20 transition-all duration-300 flex items-center gap-1 sm:gap-2 text-sm"
+              title="Clear whiteboard"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Clear</span>
+            </button>
 
-          {/* Export */}
-          <button
-            onClick={handleExportMenu}
-            className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-medium text-sm transition-colors flex items-center space-x-1"
-            title="Export as image"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            <span>Export</span>
-          </button>
+            <button
+              onClick={handleExportMenu}
+              className="group relative overflow-hidden bg-green-500/10 backdrop-blur-sm text-green-300 px-3 py-2 rounded-lg font-medium border-2 border-green-500/20 hover:border-green-500/50 hover:bg-green-500/20 transition-all duration-300 flex items-center gap-1 sm:gap-2 text-sm"
+              title="Export as image"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Keyboard Shortcuts Hint */}
-      <div className="mt-2 text-xs text-gray-500 flex items-center space-x-4">
-        <span>💡 Tips:</span>
+      <div className="mt-2 text-xs text-gray-400 flex items-center gap-3 sm:gap-4 flex-wrap">
+        <span className="flex items-center gap-1">
+          <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+          💡 Tips:
+        </span>
         <span>Pen (P)</span>
         <span>Eraser (E)</span>
         <span>Rectangle (R)</span>
         <span>Circle (C)</span>
+        <span>Select (V)</span>
+        <span>Hand (H)</span>
         <span>Undo (Ctrl+Z)</span>
         <span>Redo (Ctrl+Y)</span>
       </div>
+
+      {/* Close dropdown when clicking outside */}
+      {showColorPicker && (
+        <div 
+          className="fixed inset-0 z-10"
+          onClick={() => setShowColorPicker(false)}
+        />
+      )}
     </div>
   );
 };

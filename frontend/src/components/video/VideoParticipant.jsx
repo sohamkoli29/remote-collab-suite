@@ -1,4 +1,4 @@
-import  { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const VideoParticipant = ({ socketId, stream, participant }) => {
   const videoRef = useRef(null);
@@ -6,29 +6,24 @@ const VideoParticipant = ({ socketId, stream, participant }) => {
   const [isAudioActive, setIsAudioActive] = useState(false);
   const [hasError, setHasError] = useState(false);
 
-  // Attach stream to video element
   useEffect(() => {
     if (!videoRef.current || !stream) return;
 
-    console.log('Attaching stream to video element for:', socketId);
-    
+    console.log('🎥 Attaching stream for participant:', socketId);
+
     try {
       videoRef.current.srcObject = stream;
-      
-      // Force play the video
       const playPromise = videoRef.current.play();
-      
+
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            console.log('Video playing successfully for:', socketId);
+            console.log('✅ Video playing for:', socketId);
             setHasError(false);
           })
           .catch(error => {
-            console.error('Error playing video for:', socketId, error);
+            console.error('❌ Error playing video for:', socketId, error);
             setHasError(true);
-            
-            // Retry after a short delay
             setTimeout(() => {
               if (videoRef.current) {
                 videoRef.current.play().catch(e => console.error('Retry failed:', e));
@@ -37,7 +32,7 @@ const VideoParticipant = ({ socketId, stream, participant }) => {
           });
       }
     } catch (error) {
-      console.error('Error setting srcObject:', error);
+      console.error('❌ Error setting srcObject for participant:', socketId, error);
       setHasError(true);
     }
 
@@ -48,50 +43,25 @@ const VideoParticipant = ({ socketId, stream, participant }) => {
     };
   }, [stream, socketId]);
 
-  // Monitor track status in real-time
   useEffect(() => {
     if (!stream) return;
 
     const videoTrack = stream.getVideoTracks()[0];
     const audioTrack = stream.getAudioTracks()[0];
 
-    // Set initial states
     setIsVideoActive(videoTrack?.enabled ?? false);
     setIsAudioActive(audioTrack?.enabled ?? false);
 
-    console.log('Initial track states for', socketId, '- Video:', videoTrack?.enabled, 'Audio:', audioTrack?.enabled);
+    const handleVideoMute = () => setIsVideoActive(false);
+    const handleVideoUnmute = () => setIsVideoActive(true);
+    const handleVideoEnd = () => setIsVideoActive(false);
+    const handleAudioMute = () => setIsAudioActive(false);
+    const handleAudioUnmute = () => setIsAudioActive(true);
 
-    // Listen for track changes
-    const handleTrackMute = () => {
-      setIsVideoActive(false);
-      console.log('Video track muted for:', socketId);
-    };
-
-    const handleTrackUnmute = () => {
-      setIsVideoActive(true);
-      console.log('Video track unmuted for:', socketId);
-    };
-
-    const handleTrackEnded = () => {
-      setIsVideoActive(false);
-      console.log('Video track ended for:', socketId);
-    };
-
-    const handleAudioMute = () => {
-      setIsAudioActive(false);
-      console.log('Audio track muted for:', socketId);
-    };
-
-    const handleAudioUnmute = () => {
-      setIsAudioActive(true);
-      console.log('Audio track unmuted for:', socketId);
-    };
-
-    // Add event listeners
     if (videoTrack) {
-      videoTrack.addEventListener('mute', handleTrackMute);
-      videoTrack.addEventListener('unmute', handleTrackUnmute);
-      videoTrack.addEventListener('ended', handleTrackEnded);
+      videoTrack.addEventListener('mute', handleVideoMute);
+      videoTrack.addEventListener('unmute', handleVideoUnmute);
+      videoTrack.addEventListener('ended', handleVideoEnd);
     }
 
     if (audioTrack) {
@@ -99,26 +69,12 @@ const VideoParticipant = ({ socketId, stream, participant }) => {
       audioTrack.addEventListener('unmute', handleAudioUnmute);
     }
 
-    // Poll for enabled state changes (some browsers don't fire events reliably)
-    const pollInterval = setInterval(() => {
-      if (videoTrack) {
-        setIsVideoActive(videoTrack.enabled);
-      }
-      if (audioTrack) {
-        setIsAudioActive(audioTrack.enabled);
-      }
-    }, 500);
-
-    // Cleanup
     return () => {
-      clearInterval(pollInterval);
-      
       if (videoTrack) {
-        videoTrack.removeEventListener('mute', handleTrackMute);
-        videoTrack.removeEventListener('unmute', handleTrackUnmute);
-        videoTrack.removeEventListener('ended', handleTrackEnded);
+        videoTrack.removeEventListener('mute', handleVideoMute);
+        videoTrack.removeEventListener('unmute', handleVideoUnmute);
+        videoTrack.removeEventListener('ended', handleVideoEnd);
       }
-
       if (audioTrack) {
         audioTrack.removeEventListener('mute', handleAudioMute);
         audioTrack.removeEventListener('unmute', handleAudioUnmute);
@@ -126,103 +82,46 @@ const VideoParticipant = ({ socketId, stream, participant }) => {
     };
   }, [stream, socketId]);
 
-  const displayName = participant?.userName || 'Guest';
-  const initials = displayName
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-
   return (
-    <div className="relative bg-gray-800 rounded-lg overflow-hidden group" style={{ aspectRatio: '1/1' }}>
-      {/* Video Element */}
+    <div className="relative glass-panel backdrop-blur-sm bg-white/5 border-white/20 rounded-2xl overflow-hidden group aspect-video animate-scale-in">
       <video
         ref={videoRef}
         autoPlay
         playsInline
-        muted={false} // Don't mute remote videos
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          display: !isVideoActive || hasError ? 'none' : 'block',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0
-        }}
-        onLoadedMetadata={() => console.log('Video metadata loaded for:', socketId)}
-        onPlay={() => console.log('Video started playing for:', socketId)}
-        onError={(e) => {
-          console.error('Video element error for:', socketId, e);
-          setHasError(true);
-        }}
+        className="w-full h-full object-cover bg-slate-800"
+        muted
       />
 
-      {/* Avatar Fallback (when video is off or error) */}
-      {(!isVideoActive || hasError) && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
-          <div className="text-white text-6xl font-bold mb-4">
-            {initials}
+      {/* Video Off Overlay */}
+      {!isVideoActive && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 z-10">
+          <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mb-3">
+            <span className="text-white text-xl font-bold">
+              {participant?.name?.[0]?.toUpperCase() || 'U'}
+            </span>
           </div>
-          {hasError && (
-            <div className="text-white text-sm bg-red-500 bg-opacity-50 px-3 py-1 rounded">
-              Video Error - Reconnecting...
-            </div>
-          )}
+          <p className="text-white font-semibold text-sm">{participant?.name || 'Participant'}</p>
         </div>
       )}
 
       {/* Participant Info Overlay */}
-      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <span className="bg-gray-900 bg-opacity-75 text-white px-3 py-1 rounded-full text-sm font-medium truncate max-w-xs">
-            {displayName}
+      <div className="absolute bottom-2 left-2 flex flex-wrap items-center gap-1 z-20">
+        <span className="glass-panel backdrop-blur-md bg-slate-900/80 text-white px-2 py-1 rounded-lg text-xs font-semibold border border-white/20">
+          {participant?.name || 'Participant'}
+        </span>
+
+        {!isAudioActive && (
+          <span className="bg-gradient-to-r from-red-600 to-rose-600 text-white px-1.5 py-0.5 rounded text-xs font-semibold flex items-center gap-0.5 shadow-lg">
+            <span className="text-[10px]">🔇</span>
+            Muted
           </span>
-          
-          {/* Audio Indicator */}
-          {!isAudioActive && (
-            <div className="bg-red-500 p-1 rounded-full" title="Microphone off">
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
-              </svg>
-            </div>
-          )}
-
-          {/* Audio Active Indicator */}
-          {isAudioActive && (
-            <div className="bg-green-500 p-1 rounded-full" title="Microphone on">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-              </svg>
-            </div>
-          )}
-        </div>
-
-        {/* Connection Quality Indicator */}
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="flex items-center space-x-1 bg-gray-900 bg-opacity-75 px-2 py-1 rounded">
-            <div className="w-1 h-3 bg-green-500 rounded"></div>
-            <div className="w-1 h-4 bg-green-500 rounded"></div>
-            <div className="w-1 h-5 bg-green-500 rounded"></div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Video Off Badge */}
-      {!isVideoActive && !hasError && (
-        <div className="absolute top-4 right-4">
-          <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
-            Camera Off
-          </span>
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-red-900/50 text-red-300 text-sm font-semibold z-30">
+          Stream Error
         </div>
-      )}
-
-      {/* Speaking Indicator (animated border when speaking) */}
-      {isAudioActive && (
-        <div className="absolute inset-0 pointer-events-none border-4 border-green-400 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"></div>
       )}
     </div>
   );

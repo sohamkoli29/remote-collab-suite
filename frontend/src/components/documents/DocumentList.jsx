@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { documentAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { 
+  FileText, Plus, Loader2, AlertCircle, Trash2, 
+  Calendar, User, X, Check, FilePlus 
+} from 'lucide-react';
 
 const DocumentList = ({ workspaceId, onDocumentSelect, onCreateDocument }) => {
   const { user: currentUser } = useAuth();
@@ -9,6 +13,7 @@ const DocumentList = ({ workspaceId, onDocumentSelect, onCreateDocument }) => {
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newDocumentTitle, setNewDocumentTitle] = useState('');
+  const [creating, setCreating] = useState(false);
 
   React.useEffect(() => {
     loadDocuments();
@@ -32,6 +37,7 @@ const DocumentList = ({ workspaceId, onDocumentSelect, onCreateDocument }) => {
     if (!newDocumentTitle.trim()) return;
 
     try {
+      setCreating(true);
       const response = await documentAPI.createDocument({
         workspaceId,
         title: newDocumentTitle.trim()
@@ -41,12 +47,12 @@ const DocumentList = ({ workspaceId, onDocumentSelect, onCreateDocument }) => {
       setDocuments(prev => [newDocument, ...prev]);
       setNewDocumentTitle('');
       setShowCreateForm(false);
-      
-      // Auto-open the new document
       onDocumentSelect(newDocument);
     } catch (error) {
       console.error('Error creating document:', error);
       setError('Failed to create document');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -74,63 +80,99 @@ const DocumentList = ({ workspaceId, onDocumentSelect, onCreateDocument }) => {
     });
   };
 
-  const getInitials = (firstName, lastName) => {
-    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
-  };
-
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-32">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+      <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 min-h-64 flex items-center justify-center">
+        <div className="text-center space-y-4 animate-scale-in">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-neon animate-pulse-glow">
+            <Loader2 className="w-8 h-8 animate-spin text-white" />
+          </div>
+          <div>
+            <p className="text-white font-semibold text-lg">Loading Documents</p>
+            <p className="text-gray-400 text-sm mt-1">Please wait...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-900">Documents</h3>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="btn-primary text-sm"
-        >
-          New Document
-        </button>
+      <div className="flex justify-between items-center gap-4">
+        <h3 className="text-xl font-display font-bold text-white">All Documents</h3>
+        {!showCreateForm && (
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="group relative overflow-hidden bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              <span className="leading-none">New Document</span>
+            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+          </button>
+        )}
       </div>
 
+      {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-          {error}
+        <div className="bg-red-500/10 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2 animate-scale-in">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="leading-tight">{error}</span>
         </div>
       )}
 
       {/* Create Document Form */}
       {showCreateForm && (
-        <div className="bg-gray-50 rounded-lg p-4">
-          <form onSubmit={handleCreateDocument} className="space-y-3">
-            <input
-              type="text"
-              value={newDocumentTitle}
-              onChange={(e) => setNewDocumentTitle(e.target.value)}
-              placeholder="Enter document title..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              autoFocus
-            />
-            <div className="flex space-x-2">
+        <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 animate-scale-in">
+          <form onSubmit={handleCreateDocument} className="space-y-4">
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-white leading-none">
+                <FileText className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                <span>Document Title</span>
+              </label>
+              <input
+                type="text"
+                value={newDocumentTitle}
+                onChange={(e) => setNewDocumentTitle(e.target.value)}
+                placeholder="e.g., Project Proposal, Meeting Notes..."
+                className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm border-2 border-white/10 rounded-xl text-white placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-purple-500/30 focus:border-purple-400/50 transition-all duration-300 leading-normal"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-3">
               <button
                 type="submit"
-                disabled={!newDocumentTitle.trim()}
-                className="btn-primary text-sm px-3 py-1 disabled:opacity-50"
+                disabled={!newDocumentTitle.trim() || creating}
+                className="group relative flex-1 overflow-hidden bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                Create
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {creating ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin flex-shrink-0" />
+                      <span className="leading-none">Creating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-5 h-5 flex-shrink-0" />
+                      <span className="leading-none">Create</span>
+                    </>
+                  )}
+                </span>
+                {!creating && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                )}
               </button>
               <button
                 type="button"
-                onClick={() => setShowCreateForm(false)}
-                className="btn-secondary text-sm px-3 py-1"
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setNewDocumentTitle('');
+                }}
+                className="px-6 py-3 bg-white/5 backdrop-blur-sm text-white rounded-xl font-semibold border-2 border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 leading-none"
               >
-                Cancel
+                <X className="w-5 h-5" />
               </button>
             </div>
           </form>
@@ -138,58 +180,81 @@ const DocumentList = ({ workspaceId, onDocumentSelect, onCreateDocument }) => {
       )}
 
       {/* Documents List */}
-      <div className="space-y-2">
-        {documents.map((document) => (
-          <div
-            key={document.id}
-            onClick={() => onDocumentSelect(document)}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer group"
-          >
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h4 className="font-medium text-gray-900 mb-1">
-                  {document.title}
-                </h4>
-                <div className="flex items-center space-x-4 text-sm text-gray-500">
-                  <span>Updated {formatDate(document.updated_at)}</span>
-                  <span>•</span>
-                  <span>Created by {document.creator?.first_name}</span>
+      {documents.length === 0 && !showCreateForm ? (
+        <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 text-center py-16 animate-scale-in">
+          <div className="max-w-md mx-auto">
+            <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-neon animate-float">
+              <FilePlus className="w-12 h-12 text-white" />
+            </div>
+            <h4 className="text-2xl font-display font-bold text-white mb-3">No documents yet</h4>
+            <p className="text-gray-300 text-lg mb-8 leading-relaxed">
+              Create your first document to start collaborating with your team
+            </p>
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="group relative inline-flex items-center overflow-hidden bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                <Plus className="w-5 h-5" />
+                <span className="leading-none">Create Document</span>
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
+          {documents.map((document, index) => (
+            <div
+              key={document.id}
+              onClick={() => onDocumentSelect(document)}
+              className="group glass-panel backdrop-blur-2xl bg-white/10 border-white/20 hover:bg-white/15 hover:border-white/30 cursor-pointer transition-all duration-300 hover:shadow-glass-lg hover:-translate-y-1 relative overflow-hidden"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              {/* Gradient Accent */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+              
+              {/* Content */}
+              <div className="space-y-4">
+                {/* Document Icon & Title */}
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-neon group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-display font-bold text-white line-clamp-2 group-hover:text-cyan-300 transition-colors leading-tight">
+                      {document.title}
+                    </h4>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Metadata */}
+                <div className="space-y-2 text-xs text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-3 h-3 flex-shrink-0" />
+                    <span className="leading-tight">Updated {formatDate(document.updated_at)}</span>
+                  </div>
+                  {document.creator && (
+                    <div className="flex items-center gap-2">
+                      <User className="w-3 h-3 flex-shrink-0" />
+                      <span className="leading-tight truncate">Created by {document.creator.first_name}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Delete Button */}
                 <button
                   onClick={(e) => handleDeleteDocument(document.id, e)}
-                  className="text-gray-400 hover:text-red-600 p-1"
+                  className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200"
                   title="Delete document"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
-          </div>
-        ))}
-
-        {documents.length === 0 && !showCreateForm && (
-          <div className="text-center py-8">
-            <div className="text-gray-400 mb-4">
-              <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h4 className="text-lg font-medium text-gray-900 mb-2">No documents yet</h4>
-            <p className="text-gray-600 mb-4">Create your first document to start collaborating</p>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="btn-primary"
-            >
-              Create Document
-            </button>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

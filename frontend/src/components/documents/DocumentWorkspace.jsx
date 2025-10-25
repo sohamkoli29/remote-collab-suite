@@ -1,7 +1,8 @@
-    import  { useState } from 'react';
+import { useState } from 'react';
 import DocumentList from './DocumentList';
 import CollaborativeEditor from './CollaborativeEditor';
 import { documentAPI } from '../../services/api';
+import { FileText, ArrowLeft, Sparkles } from 'lucide-react';
 
 const DocumentWorkspace = ({ workspaceId }) => {
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -24,7 +25,6 @@ const DocumentWorkspace = ({ workspaceId }) => {
       setDocumentTitle(newTitle);
     } catch (error) {
       console.error('Error updating document title:', error);
-      // Revert on error
       setDocumentTitle(selectedDocument.title);
     }
   };
@@ -43,10 +43,15 @@ const DocumentWorkspace = ({ workspaceId }) => {
       {!selectedDocument ? (
         <>
           {/* Header */}
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Documents</h2>
-              <p className="text-gray-600 mt-1">Create and collaborate on documents in real-time</p>
+          <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 animate-slide-in-down">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-neon flex-shrink-0">
+                <FileText className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-display font-bold text-white leading-tight">Documents</h2>
+                <p className="text-gray-300 text-sm leading-tight mt-1">Create and collaborate on documents in real-time</p>
+              </div>
             </div>
           </div>
 
@@ -60,20 +65,23 @@ const DocumentWorkspace = ({ workspaceId }) => {
       ) : (
         <>
           {/* Editor Header */}
-          <div className="flex items-center justify-between">
+          <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 animate-slide-in-down">
             <button
               onClick={handleBackToList}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+              className="group flex items-center gap-3 text-gray-300 hover:text-white transition-colors duration-200"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              <span>Back to Documents</span>
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all duration-200">
+                <ArrowLeft className="w-5 h-5" />
+              </div>
+              <div className="text-left">
+                <div className="text-sm font-semibold leading-tight">Back to Documents</div>
+                <div className="text-xs text-gray-400 leading-tight">View all documents</div>
+              </div>
             </button>
           </div>
 
           {/* Collaborative Editor */}
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 animate-fade-in">
             <CollaborativeEditor
               documentId={selectedDocument.id}
               workspaceId={workspaceId}
