@@ -42,7 +42,7 @@ const Footer = () => {
             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1.5 shadow-lg">
               <img 
                 src="/Logo.png" 
-                alt="CollabSuite Logo" 
+                alt="KaaryaSetu Logo" 
                 className="w-full h-full object-contain"
               />
             </div>
@@ -89,7 +89,7 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="mt-6 pt-6 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
           <div className="text-sm text-gray-500">
-            © {currentYear} CollabSuite. All rights reserved.
+            © {currentYear} KaaryaSetu. All rights reserved.
           </div>
           
           <div className="flex items-center space-x-2 text-sm text-gray-500">

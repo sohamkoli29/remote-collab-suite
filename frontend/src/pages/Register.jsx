@@ -107,11 +107,15 @@ const Register = () => {
             <div className="space-y-6">
               {/* Logo */}
               <div className="flex items-center space-x-3">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-neon">
-                  <Sparkles className="w-8 h-8 text-white" />
-                </div>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center shadow-neon group-hover:shadow-neon-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 overflow-hidden">
+      <img
+        src="/Logo.png"
+        alt="KaaryaSetu Logo"
+        className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+      />
+    </div>
                 <div>
-                  <h1 className="text-4xl font-display font-bold text-white">CollabSuite</h1>
+                  <h1 className="text-4xl font-display font-bold text-white">KaaryaSetu</h1>
                   <p className="text-purple-300 text-sm">Remote Work Platform</p>
                 </div>
               </div>
@@ -159,9 +163,13 @@ const Register = () => {
             <div className="glass-panel backdrop-blur-2xl bg-white/10 border-white/20 shadow-glass-lg max-h-[90vh] overflow-y-auto">
               {/* Mobile Logo */}
               <div className="lg:hidden flex items-center justify-center mb-6">
-                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-neon">
-                  <Sparkles className="w-7 h-7 text-white" />
-                </div>
+               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center shadow-neon group-hover:shadow-neon-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 overflow-hidden">
+      <img
+        src="/Logo.png"
+        alt="KaaryaSetu Logo"
+        className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+      />
+    </div>
               </div>
 
               {/* Header */}

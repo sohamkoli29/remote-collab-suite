@@ -103,9 +103,13 @@ const Dashboard = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-neon">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
+                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center shadow-neon group-hover:shadow-neon-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 overflow-hidden">
+      <img
+        src="/Logo.png"
+        alt="KaaryaSetu Logo"
+        className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+      />
+    </div>
                 <h1 className="text-5xl font-display font-bold text-white">
                   Your Workspaces
                 </h1>
