@@ -16,6 +16,8 @@ import { setupTaskHandlers } from './sockets/taskHandlers.js';
 import { setupDocumentServer, getActiveDocuments } from './sockets/documentServer.js';
 import { setupVideoHandlers } from './sockets/videoHandlers.js';
 import { setupWhiteboardHandlers } from './sockets/whiteboardHandlers.js';
+import { createClient } from '@supabase/supabase-js';
+
 
 // Load environment variables
 dotenv.config();
@@ -29,7 +31,10 @@ const io = new Server(server, {
     credentials: true
   }
 });
-
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
 // Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:5173",
@@ -48,12 +53,14 @@ app.use('/api/document-snapshots', documentSnapshotRoutes);
 app.use('/api/files', fileRoutes);
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'Remote Collab Suite API is running',
-    timestamp: new Date().toISOString()
-  });
+// Health check — keep Render + Supabase alive
+app.get('/api/health', async (req, res) => {
+  try {
+    await supabase.from('test').select('message').limit(1).single();
+    res.status(200).json({ alive: true, db: 'connected' });
+  } catch (err) {
+    res.status(200).json({ alive: true, db: 'error' });
+  }
 });
 
 // Document server status endpoint
